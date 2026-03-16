@@ -1,0 +1,241 @@
+---
+type Props = {
+	rkey?: string | null;
+};
+
+const { rkey } = Astro.props;
+const CONTAINER_ID = "now-post-island";
+const hasRkey = Boolean(rkey);
+const BLUESKY_ENDPOINT = "https://public.api.bsky.app/xrpc/com.atproto.repo.getRecord";
+const REPO_HANDLE = "gramajo.xyz";
+const COLLECTION = "app.bsky.feed.post";
+---
+
+<div
+	id={CONTAINER_ID}
+	class="now-post"
+	data-state={hasRkey ? "loading" : "missing"}
+	data-rkey={rkey ?? ""}
+	data-endpoint={BLUESKY_ENDPOINT}
+	data-repo={REPO_HANDLE}
+	data-collection={COLLECTION}
+>
+	{hasRkey ? (
+		<p class="now-post__status">Fetching that update… hang tight.</p>
+	) : (
+		<p class="now-post__status now-post__status--error">Missing post identifier.</p>
+	)}
+</div>
+
+<style>
+	.now-post {
+		display: flex;
+		flex-direction: column;
+		gap: 1.75rem;
+	}
+	.now-post[data-state="error"] .now-post__status {
+		color: #f87171;
+	}
+	.now-post__status {
+		margin: 0;
+		color: var(--color-muted);
+		font-size: 0.95rem;
+	}
+	.now-post__card {
+		border: 1px solid var(--color-border);
+		border-radius: calc(var(--radius-card) / 1.1);
+		background: rgba(42, 42, 42, 0.75);
+		padding: clamp(1.5rem, 4vw, 2.25rem);
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+		box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+	}
+	.now-post__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+	}
+	.now-post__timestamp {
+		color: var(--color-muted);
+		font-size: 0.85rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+	.now-post__copy {
+		font-family: var(--font-mono);
+		font-size: 0.78rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		background: transparent;
+		border: 1px solid var(--color-border);
+		color: var(--color-text);
+		padding: 0.55rem 1rem;
+		border-radius: calc(var(--radius-card) / 2);
+		cursor: pointer;
+		transition: border-color var(--transition-base), color var(--transition-base);
+	}
+	.now-post__copy:hover,
+	.now-post__copy:focus-visible,
+	.now-post__copy[data-status="copied"] {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+	}
+	.now-post__copy[data-status="error"] {
+		border-color: #f87171;
+		color: #f87171;
+	}
+	.now-post__text {
+		margin: 0;
+		color: var(--color-text);
+		line-height: 1.7;
+		font-size: 1.02rem;
+		white-space: pre-wrap;
+	}
+	@media (max-width: 520px) {
+		.now-post__header {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.75rem;
+		}
+		.now-post__copy {
+			width: 100%;
+			text-align: center;
+		}
+	}
+</style>
+
+{hasRkey && (
+	<script type="module" client:load>
+		const container = document.getElementById({JSON.stringify(CONTAINER_ID)});
+
+		if (!container) {
+			console.warn("[NowPost] Container not found");
+			throw new Error("NowPost container missing");
+		}
+
+		const rkey = container.dataset.rkey;
+		const endpointValue = container.dataset.endpoint ?? "";
+		const repo = container.dataset.repo ?? "";
+		const collection = container.dataset.collection ?? "";
+
+		if (!rkey) {
+			container.dataset.state = "error";
+			container.innerHTML = '<p class="now-post__status now-post__status--error">Missing post identifier.</p>';
+			throw new Error("NowPost missing rkey");
+		}
+
+		if (!endpointValue || !repo || !collection) {
+			container.dataset.state = "error";
+			container.innerHTML = '<p class="now-post__status now-post__status--error">Configuration error loading this post.</p>';
+			throw new Error("NowPost configuration missing");
+		}
+
+		const endpoint = new URL(endpointValue);
+		endpoint.searchParams.set("repo", repo);
+		endpoint.searchParams.set("collection", collection);
+		endpoint.searchParams.set("rkey", rkey);
+
+		const dateFormatter = new Intl.DateTimeFormat("en-US", {
+			dateStyle: "medium",
+			timeStyle: "short",
+		});
+
+		const renderStatus = (message, variant = "info") => {
+			container.dataset.state = variant;
+			container.innerHTML = `<p class="now-post__status${variant === "error" ? " now-post__status--error" : ""}">${message}</p>`;
+		};
+
+		const renderPost = (post) => {
+			const markup = `
+				<article class="now-post__card" aria-live="polite">
+					<header class="now-post__header">
+						<time class="now-post__timestamp" datetime="${post.createdAtIso}">${post.createdAtLabel}</time>
+						<button type="button" class="now-post__copy" data-status="idle">Copy link</button>
+					</header>
+					<p class="now-post__text">${post.text}</p>
+				</article>
+			`.trim();
+
+			container.dataset.state = "success";
+			container.innerHTML = markup;
+
+			const button = container.querySelector(".now-post__copy");
+			if (!button) {
+				return;
+			}
+
+			const resetStatus = () => {
+				button.dataset.status = "idle";
+				button.textContent = "Copy link";
+			};
+
+			button.addEventListener("click", async () => {
+				const targetUrl = window.location.href;
+				try {
+					if (navigator.clipboard?.writeText) {
+						await navigator.clipboard.writeText(targetUrl);
+					} else {
+						const textarea = document.createElement("textarea");
+						textarea.value = targetUrl;
+						textarea.style.position = "fixed";
+						textarea.style.top = "-9999px";
+						document.body.appendChild(textarea);
+						textarea.focus();
+						textarea.select();
+						document.execCommand("copy");
+						document.body.removeChild(textarea);
+					}
+					button.dataset.status = "copied";
+					button.textContent = "Copied ✓";
+				} catch (error) {
+					console.error("[NowPost] copy failed", error);
+					button.dataset.status = "error";
+					button.textContent = "Copy failed";
+				}
+				setTimeout(resetStatus, 2500);
+			});
+		};
+
+		const fetchPost = async () => {
+			renderStatus("Fetching that update… hang tight.", "loading");
+
+			try {
+				const response = await fetch(endpoint.toString(), {
+					headers: { Accept: "application/json" },
+				});
+
+				if (!response.ok) {
+					throw new Error(`API responded with ${response.status}`);
+				}
+
+				const data = await response.json();
+				const record = data?.value;
+				const text = typeof record?.text === "string" ? record.text.trim() : "";
+				const createdAt = typeof record?.createdAt === "string" ? record.createdAt : null;
+
+				if (!text || !createdAt) {
+					throw new Error("Post data was incomplete or malformed.");
+				}
+
+				const date = new Date(createdAt);
+				const createdAtLabel = Number.isNaN(date.getTime()) ? createdAt : dateFormatter.format(date);
+
+				renderPost({
+					text,
+					createdAtIso: createdAt,
+					createdAtLabel,
+				});
+			} catch (error) {
+				console.error("[NowPost]", error);
+				renderStatus(
+					error?.message ?? "Unable to reach the Bluesky public API right now.",
+					"error",
+				);
+			}
+		};
+
+		fetchPost();
+	</script>
+)}

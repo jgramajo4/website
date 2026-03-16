@@ -1,0 +1,22 @@
+name: Deploy to Cloudflare Pages
+
+on:
+  schedule:
+    - cron: "0 * * * *"
+  push:
+    branches:
+      - main
+
+jobs:
+  trigger-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invoke Cloudflare Pages deploy webhook
+        env:
+          DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK_URL }}
+        run: |
+          if [ -z "$DEPLOY_HOOK" ]; then
+            echo "CLOUDFLARE_DEPLOY_HOOK_URL secret is not configured." >&2
+            exit 1
+          fi
+          curl -fsS -X POST "$DEPLOY_HOOK"

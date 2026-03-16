@@ -1,0 +1,54 @@
+---
+import "../styles/global.css";
+import { NAV_LINKS, SITE_DESCRIPTION, SITE_TAGLINE, SITE_TITLE } from "@/site.config";
+
+type Props = {
+	title?: string;
+	description?: string;
+};
+
+const { title, description } = Astro.props as Props;
+const pageTitle = title ? `${title} · ${SITE_TITLE}` : `${SITE_TITLE} · ${SITE_TAGLINE}`;
+const metaDescription = description ?? SITE_DESCRIPTION;
+const currentPath = Astro.url.pathname.replace(/\/+$/, "") || "/";
+---
+
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>{pageTitle}</title>
+		<meta name="description" content={metaDescription} />
+		<link rel="canonical" href={`https://gramajo.xyz${currentPath}`} />
+	</head>
+	<body>
+		<div class="page-shell">
+			<nav class="site-nav" aria-label="Primary">
+				<a class="site-nav__brand" href="/">{SITE_TITLE}</a>
+				<ul class="site-nav__links">
+					{NAV_LINKS.map((link) => {
+						const normalizedHref = link.href.replace(/\/+$/, "") || "/";
+						const isCurrent = normalizedHref === currentPath;
+						return (
+							<li>
+								<a
+									class="site-nav__link"
+									href={link.href}
+									aria-current={isCurrent ? "page" : undefined}
+								>
+									{link.label}
+								</a>
+							</li>
+						);
+					})}
+				</ul>
+			</nav>
+
+			<main>
+				<section class="terminal-card">
+					<slot />
+				</section>
+			</main>
+		</div>
+	</body>
+</html>

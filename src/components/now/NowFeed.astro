@@ -1,0 +1,191 @@
+---
+const BLUESKY_ENDPOINT = "https://public.api.bsky.app/xrpc/com.atproto.repo.listRecords";
+const BLUESKY_PARAMS = {
+	repo: "gramajo.xyz",
+	collection: "app.bsky.feed.post",
+	limit: "20",
+};
+const FEED_ID = "now-feed-island";
+---
+
+<div id={FEED_ID} class="now-feed" data-state="loading" data-endpoint={BLUESKY_ENDPOINT} data-params={JSON.stringify(BLUESKY_PARAMS)}>
+	<p class="now-feed__status">Loading the latest Now updates…</p>
+</div>
+
+<style>
+	.now-feed {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+	.now-feed[data-state="error"] .now-feed__status {
+		color: #f87171;
+	}
+	.now-feed__status {
+		margin: 0;
+		color: var(--color-muted);
+		font-size: 0.95rem;
+	}
+	.now-feed__list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+	}
+	.now-feed__item {
+		padding-bottom: 1.5rem;
+		border-bottom: 1px solid var(--color-border);
+	}
+	.now-feed__item:last-child {
+		border-bottom: none;
+		padding-bottom: 0;
+	}
+	.now-feed__post {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+	}
+	.now-feed__text {
+		margin: 0;
+		white-space: pre-wrap;
+		line-height: 1.6;
+		font-size: 0.98rem;
+		color: var(--color-text);
+	}
+	.now-feed__meta {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		font-size: 0.82rem;
+		color: var(--color-muted);
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+	}
+	.now-feed__permalink {
+		font-size: 0.78rem;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+	}
+	@media (max-width: 540px) {
+		.now-feed__meta {
+			flex-direction: column;
+			align-items: flex-start;
+		}
+	}
+</style>
+
+<script type="module" client:load>
+	const container = document.getElementById({JSON.stringify(FEED_ID)});
+
+	if (!container) {
+		console.warn("[NowFeed] Container not found");
+		return;
+	}
+
+	const endpointValue = container.dataset.endpoint ?? "";
+	const endpoint = endpointValue ? new URL(endpointValue) : null;
+	const params = container.dataset.params ? JSON.parse(container.dataset.params) : {};
+
+	if (!endpoint) {
+		console.warn("[NowFeed] Missing endpoint value");
+		return;
+	}
+
+	for (const [key, value] of Object.entries(params)) {
+		if (value != null) {
+			endpoint.searchParams.set(key, String(value));
+		}
+	}
+
+	const dateFormatter = new Intl.DateTimeFormat("en-US", {
+		dateStyle: "medium",
+		timeStyle: "short",
+	});
+
+	const renderStatus = (message, variant = "info") => {
+		container.dataset.state = variant === "error" ? "error" : variant;
+		container.innerHTML = `<p class="now-feed__status">${message}</p>`;
+	};
+
+	const renderPosts = (posts) => {
+		if (!posts.length) {
+			renderStatus("No Bluesky updates yet. Check back soon.", "empty");
+			return;
+		}
+
+		const items = posts
+			.map(
+				(post) => `
+			<li class="now-feed__item">
+				<article class="now-feed__post">
+					<p class="now-feed__text">${post.text}</p>
+					<footer class="now-feed__meta">
+						<time datetime="${post.createdAtIso}">${post.createdAtLabel}</time>
+						<a class="now-feed__permalink" href="/now?rkey=${encodeURIComponent(post.rkey)}">open ↗</a>
+					</footer>
+				</article>
+			</li>
+		`.trim()
+			)
+			.join("");
+
+		container.dataset.state = "success";
+		container.innerHTML = `<ul class="now-feed__list">${items}</ul>`;
+	};
+
+	const normalizeRecords = (records) =>
+		records
+			.map((record) => {
+				const text = typeof record.value?.text === "string" ? record.value.text.trim() : "";
+				const createdAt = typeof record.value?.createdAt === "string" ? record.value.createdAt : null;
+
+				if (!text || !createdAt) {
+					return null;
+				}
+
+				const date = new Date(createdAt);
+				const createdAtLabel = Number.isNaN(date.getTime())
+					? createdAt
+					: dateFormatter.format(date);
+
+				return {
+					rkey: record.rkey,
+					text,
+					createdAtIso: createdAt,
+					createdAtLabel,
+				};
+			})
+			.filter(Boolean)
+			.sort((a, b) => new Date(b.createdAtIso).getTime() - new Date(a.createdAtIso).getTime());
+
+	const loadFeed = async () => {
+		renderStatus("Loading the latest Now updates…", "loading");
+
+		try {
+			const response = await fetch(endpoint.toString(), {
+				headers: { Accept: "application/json" },
+			});
+
+			if (!response.ok) {
+				throw new Error(`API responded with ${response.status}`);
+			}
+
+			const payload = await response.json();
+			const posts = normalizeRecords(payload.records || []);
+			renderPosts(posts);
+		} catch (error) {
+			console.error("[NowFeed]", error);
+			renderStatus(
+				typeof error?.message === "string"
+					? error.message
+					: "Unable to reach the Bluesky public API right now.",
+				"error"
+			);
+		}
+	};
+
+	loadFeed();
+</script>

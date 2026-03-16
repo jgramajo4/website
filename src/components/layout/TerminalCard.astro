@@ -1,0 +1,325 @@
+---
+
+type Props = {
+
+	title?: string;
+
+	subtitle?: string;
+
+	prompt?: string;
+
+	meta?: string[];
+
+	as?: keyof HTMLElementTagNameMap;
+
+};
+
+
+const {
+
+	title,
+
+	subtitle,
+
+	prompt = "gramajo@xyz",
+
+	meta = [],
+
+	as = "section",
+
+} = Astro.props as Props;
+
+
+const Tag = as;
+
+---
+
+
+<Tag class="terminal-card terminal-card--frame">
+
+	<header class="terminal-card__header">
+
+		<div class="terminal-card__lights" aria-hidden="true">
+
+			<span class="terminal-card__light terminal-card__light--red" />
+
+			<span class="terminal-card__light terminal-card__light--amber" />
+
+			<span class="terminal-card__light terminal-card__light--green" />
+
+		</div>
+
+		<div class="terminal-card__titles">
+
+			{title && <span class="terminal-card__title">{title}</span>}
+
+			{subtitle && <span class="terminal-card__subtitle">{subtitle}</span>}
+
+		</div>
+
+		{meta.length > 0 && (
+
+			<ul class="terminal-card__meta">
+
+				{meta.map((item) => (
+
+					<li>{item}</li>
+
+				))}
+
+			</ul>
+
+		)}
+
+	</header>
+
+
+	<div class="terminal-card__body">
+
+		{prompt && (
+
+			<p class="terminal-card__prompt" aria-label="terminal prompt">
+
+				<span class="terminal-card__prompt-user">{prompt}</span>
+
+				<span class="terminal-card__prompt-caret">$</span>
+
+			</p>
+
+		)}
+
+		<slot />
+
+	</div>
+
+</Tag>
+
+
+<style>
+
+	.terminal-card--frame {
+
+		padding: 0;
+
+		overflow: hidden;
+
+		border-radius: var(--radius-card);
+
+	}
+
+
+	.terminal-card__header {
+
+		display: flex;
+
+		align-items: center;
+
+		justify-content: space-between;
+
+		gap: 1rem;
+
+		padding: 0.75rem 1rem;
+
+		border-bottom: 1px solid var(--color-border);
+
+		background: rgba(20, 20, 20, 0.65);
+
+		backdrop-filter: blur(12px);
+
+		min-height: 3rem;
+
+	}
+
+
+	.terminal-card__lights {
+
+		display: flex;
+
+		gap: 0.4rem;
+
+	}
+
+
+	.terminal-card__light {
+
+		width: 0.75rem;
+
+		height: 0.75rem;
+
+		border-radius: 999px;
+
+		display: inline-block;
+
+		box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35);
+
+	}
+
+
+	.terminal-card__light--red {
+
+		background: #f87171;
+
+	}
+
+
+	.terminal-card__light--amber {
+
+		background: #fbbf24;
+
+	}
+
+
+	.terminal-card__light--green {
+
+		background: #4ade80;
+
+	}
+
+
+	.terminal-card__titles {
+
+		display: flex;
+
+		flex-direction: column;
+
+		min-height: 1.5rem;
+
+	}
+
+
+	.terminal-card__title {
+
+		font-size: 0.95rem;
+
+		letter-spacing: 0.06em;
+
+		color: var(--color-text);
+
+	}
+
+
+	.terminal-card__subtitle {
+
+		font-size: 0.75rem;
+
+		color: var(--color-muted);
+
+		letter-spacing: 0.03em;
+
+	}
+
+
+	.terminal-card__meta {
+
+		margin: 0;
+
+		padding: 0;
+
+		list-style: none;
+
+		display: flex;
+
+		gap: 0.75rem;
+
+		font-size: 0.75rem;
+
+		color: var(--color-muted);
+
+		letter-spacing: 0.04em;
+
+		text-transform: uppercase;
+
+	}
+
+
+	.terminal-card__body {
+
+		padding: var(--layout-padding-y) var(--layout-padding-x);
+
+		display: flex;
+
+		flex-direction: column;
+
+		gap: 1.5rem;
+
+	}
+
+
+	.terminal-card__prompt {
+
+		margin: -0.5rem 0 0;
+
+		font-size: 0.85rem;
+
+		color: var(--color-muted);
+
+		letter-spacing: 0.02em;
+
+		display: flex;
+
+		align-items: center;
+
+		gap: 0.35rem;
+
+	}
+
+
+	.terminal-card__prompt-user {
+
+		color: var(--color-accent);
+
+	}
+
+
+	.terminal-card__prompt-caret {
+
+		color: var(--color-muted);
+
+		animation: caret 1.1s steps(1) infinite;
+
+	}
+
+
+	@keyframes caret {
+
+		0%,
+
+		50% {
+
+			opacity: 1;
+
+		}
+
+		50.1%,
+
+		100% {
+
+			opacity: 0.2;
+
+		}
+
+	}
+
+
+	@media (max-width: 640px) {
+
+		.terminal-card__header {
+
+			flex-direction: column;
+
+			align-items: flex-start;
+
+			gap: 0.5rem;
+
+		}
+
+
+		.terminal-card__meta {
+
+			flex-wrap: wrap;
+
+		}
+
+	}
+
+</style>

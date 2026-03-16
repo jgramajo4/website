@@ -1,0 +1,49 @@
+---
+type Props = {
+	text: string;
+	align?: "start" | "center";
+	size?: "sm" | "md";
+	ariaLevel?: 2 | 3 | 4 | 5 | 6;
+};
+
+const {
+	text,
+	align = "start",
+	size = "md",
+	ariaLevel = 3,
+} = Astro.props as Props;
+
+const HeadingTag = (`h${ariaLevel}` satisfies keyof HTMLElementTagNameMap)
+	? (`h${ariaLevel}` as keyof HTMLElementTagNameMap)
+	: "h3";
+---
+
+<HeadingTag class={`muted-heading muted-heading--${align} muted-heading--${size}`}>
+	{text}
+</HeadingTag>
+
+<style>
+	.muted-heading {
+		margin: 0;
+		color: var(--color-muted);
+		font-weight: 500;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+	}
+
+	.muted-heading--start {
+		text-align: left;
+	}
+
+	.muted-heading--center {
+		text-align: center;
+	}
+
+	.muted-heading--sm {
+		font-size: 0.75rem;
+	}
+
+	.muted-heading--md {
+		font-size: 0.85rem;
+	}
+</style>
