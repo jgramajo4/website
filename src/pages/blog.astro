@@ -1,20 +1,27 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import type { BearBlogPost } from "@/utils/rss";
-import { fetchBearBlogFeed } from "@/utils/rss";
+import { BearBlogFeedError, fetchBearBlogFeed } from "@/utils/rss";
 
 const MAX_POSTS = 50;
+const BEAR_BLOG_URL = "https://0xgramajo.xyz/blog/";
 
 let posts: BearBlogPost[] = [];
 let errorMessage: string | null = null;
+let fallbackUrl = BEAR_BLOG_URL;
 
 try {
 	posts = await fetchBearBlogFeed(MAX_POSTS);
 } catch (error) {
-	errorMessage =
-		error instanceof Error
-			? error.message
-			: "Unable to load the latest posts right now.";
+	console.error("[blog] Failed to load Bear Blog feed.", error);
+	if (error instanceof BearBlogFeedError) {
+		errorMessage = "Unable to load the Bear Blog feed right now.";
+		fallbackUrl = error.fallbackUrl;
+	} else if (error instanceof Error) {
+		errorMessage = error.message;
+	} else {
+		errorMessage = "Unable to load the latest posts right now.";
+	}
 }
 
 const formatDate = (isoDate: string) =>
@@ -38,9 +45,15 @@ const formatDate = (isoDate: string) =>
 	</header>
 
 	{errorMessage ? (
-		<p class="status status--error">{errorMessage}</p>
+		<p class="status status--error">
+			{errorMessage}{" "}
+			<a href={fallbackUrl} rel="noopener noreferrer">Visit Bear Blog ↗</a>
+		</p>
 	) : posts.length === 0 ? (
-		<p class="status">No posts found in the feed just yet.</p>
+		<p class="status">
+			No posts available right now. Visit{" "}
+			<a href={BEAR_BLOG_URL} rel="noopener noreferrer">Bear Blog ↗</a> to read the archive.
+		</p>
 	) : (
 		<ul class="post-list">
 			{posts.map((post) => (

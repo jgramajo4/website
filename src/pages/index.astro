@@ -1,18 +1,28 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
 import type { BearBlogPost } from "@/utils/rss";
-import { fetchBearBlogFeed } from "@/utils/rss";
+import { BearBlogFeedError, fetchBearBlogFeed } from "@/utils/rss";
+import NowFeed from "@/components/now/NowFeed.astro";
 
-const POST_LIMIT = 3;
+const POST_LIMIT = 6;
+const BLOG_ARCHIVE_URL = "https://0xgramajo.xyz/blog/";
 
 let posts: BearBlogPost[] = [];
 let errorMessage: string | null = null;
+let fallbackUrl = BLOG_ARCHIVE_URL;
 
 try {
 	posts = await fetchBearBlogFeed(POST_LIMIT);
 } catch (error) {
-	errorMessage =
-		error instanceof Error ? error.message : "Unable to load recent posts right now.";
+	console.error("[home] Failed to load Bear Blog feed.", error);
+	if (error instanceof BearBlogFeedError) {
+		errorMessage = "Unable to load the Bear Blog feed right now.";
+		fallbackUrl = error.fallbackUrl;
+	} else if (error instanceof Error) {
+		errorMessage = error.message;
+	} else {
+		errorMessage = "Unable to load the latest posts right now.";
+	}
 }
 
 const formatDate = (isoDate: string) =>
@@ -23,34 +33,48 @@ const formatDate = (isoDate: string) =>
 	});
 ---
 
-<BaseLayout description="Internet Archaeologist. Michelada Connoisseur. Founder of 0773H.">
+<BaseLayout description="Ops nerd building an open web from the command line.">
 	<header class="hero">
-		<p class="hero__eyebrow">/home</p>
-		<h1 class="hero__title">Gramajo</h1>
+		<h1 class="hero__title">gramajo</h1>
 		<p class="hero__bio">
-			Internet Archaeologist. Michelada Connoisseur. Founder of 0773H.
+			My name is Juan or better known as Gramajo. I'm an Ops nerd with a passion for Legal Tech and anything that
+			advances an open web. I'm currently working at Asana and I work on other projects in my spare time. See what
+			I'm up to now!
 		</p>
 	</header>
 
-	<section class="section">
-		<div class="section__heading">
-			<h2>Recent posts</h2>
-			<a class="section__cta" href="/blog">View all ↗</a>
-		</div>
+	<section class="contact">
+		<h2 class="contact__title">Contact</h2>
+		<ul class="contact__links">
+			<li><a href="mailto:onchainaliens@gmail.com">Email</a></li>
+			<li><span>Signal: gramajo.04</span></li>
+			<li><a href="https://t.me/jgramajo4" rel="noopener noreferrer">Telegram</a></li>
+			<li><a href="https://bsky.app/profile/gramajo.xyz" rel="noopener noreferrer">Bluesky (@gramajo.xyz)</a></li>
+		</ul>
+	</section>
+
+	<section class="posts">
+		<header class="section-header">
+			<h2 class="section-header__title">Posts</h2>
+			<a class="section-header__cta" href={BLOG_ARCHIVE_URL} rel="noopener noreferrer">View all ↗</a>
+		</header>
 
 		{errorMessage ? (
-			<p class="status status--error">{errorMessage}</p>
+			<p class="status status--error">
+				{errorMessage} <a href={fallbackUrl} rel="noopener noreferrer">Visit Bear Blog ↗</a>
+			</p>
 		) : posts.length === 0 ? (
-			<p class="status">No posts found yet. Check back soon.</p>
+			<p class="status">
+				No posts available right now. Visit{" "}
+				<a href={BLOG_ARCHIVE_URL} rel="noopener noreferrer">Bear Blog ↗</a> to read the archive.
+			</p>
 		) : (
-			<ul class="post-list">
+			<ul class="posts__list">
 				{posts.map((post) => (
-					<li class="post-list__item">
-						<a class="post-list__link" href={post.url} rel="noopener noreferrer">
-							<span class="post-list__title">{post.title}</span>
-							<time class="post-list__date" datetime={post.publishedIso}>
-								{formatDate(post.publishedIso)}
-							</time>
+					<li class="posts__item">
+						<time class="posts__date" datetime={post.publishedIso}>{formatDate(post.publishedIso)}</time>
+						<a class="posts__link" href={post.url} rel="noopener noreferrer">
+							{post.title}
 						</a>
 					</li>
 				))}
@@ -58,17 +82,13 @@ const formatDate = (isoDate: string) =>
 		)}
 	</section>
 
-	<section class="section">
-		<div class="section__heading">
-			<h2>Now</h2>
-			<span class="section__hint">Live updates coming soon</span>
-		</div>
+	<section class="now">
+		<header class="section-header">
+			<h2 class="section-header__title">Now</h2>
+			<p class="section-header__subtitle">Live from Bluesky · refreshed often.</p>
+		</header>
 
-		<ul class="now-list">
-			<li class="now-list__item">Scouting the early NFT vaults for overlooked provenance.</li>
-			<li class="now-list__item">Producing the next 0773H audio dispatch.</li>
-			<li class="now-list__item">Mapping Bluesky communities ahead of a public toolkit.</li>
-		</ul>
+		<NowFeed />
 	</section>
 </BaseLayout>
 
@@ -76,21 +96,16 @@ const formatDate = (isoDate: string) =>
 	.hero {
 		display: flex;
 		flex-direction: column;
-		gap: 1rem;
-		margin-bottom: 2.75rem;
-	}
-
-	.hero__eyebrow {
-		margin: 0;
-		font-size: 0.8rem;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--color-muted);
+		gap: 1.5rem;
+		margin-bottom: 3rem;
 	}
 
 	.hero__title {
 		margin: 0;
-		font-size: clamp(2.5rem, 6vw, 3.4rem);
+		font-size: clamp(3rem, 8vw, 4.5rem);
+		letter-spacing: -0.04em;
+		line-height: 0.95;
+		text-transform: lowercase;
 	}
 
 	.hero__bio {
@@ -98,36 +113,60 @@ const formatDate = (isoDate: string) =>
 		max-width: 62ch;
 		color: var(--color-muted);
 		font-size: 1rem;
-		line-height: 1.75;
+		line-height: 1.8;
 	}
 
-	.section {
+	.contact {
 		display: flex;
 		flex-direction: column;
-		gap: 1.5rem;
-		margin-bottom: 3rem;
+		gap: 1rem;
+		margin-bottom: 3.5rem;
 	}
 
-	.section:last-of-type {
-		margin-bottom: 0;
-	}
-
-	.section__heading {
-		display: flex;
-		flex-wrap: wrap;
-		align-items: baseline;
-		gap: 0.75rem;
-	}
-
-	.section__heading h2 {
+	.contact__title {
 		margin: 0;
-		font-size: 1.3rem;
-		letter-spacing: 0.06em;
+		font-size: 1rem;
 		text-transform: uppercase;
+		letter-spacing: 0.08em;
 		color: var(--color-accent);
 	}
 
-	.section__cta {
+	.contact__links {
+		list-style: none;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1.25rem;
+		margin: 0;
+		padding: 0;
+		font-size: 0.95rem;
+	}
+
+	.contact__links a,
+	.contact__links span {
+		color: var(--color-text);
+	}
+
+	.contact__links a:hover,
+	.contact__links a:focus-visible {
+		color: var(--color-accent);
+		text-decoration: none;
+	}
+
+	.section-header {
+		display: flex;
+		align-items: baseline;
+		gap: 0.75rem;
+		margin-bottom: 1.5rem;
+	}
+
+	.section-header__title {
+		margin: 0;
+		font-size: 1.15rem;
+		text-transform: uppercase;
+		letter-spacing: 0.1em;
+	}
+
+	.section-header__cta {
 		margin-left: auto;
 		font-size: 0.82rem;
 		text-transform: uppercase;
@@ -135,11 +174,58 @@ const formatDate = (isoDate: string) =>
 		color: var(--color-accent);
 	}
 
-	.section__hint {
-		font-size: 0.8rem;
+	.section-header__subtitle {
+		margin: 0;
+		font-size: 0.82rem;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		color: var(--color-muted);
+	}
+
+	.posts {
+		display: flex;
+		flex-direction: column;
+		margin-bottom: 3.5rem;
+	}
+
+	.posts__list {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+		display: grid;
+		gap: 1.25rem;
+	}
+
+	.posts__item {
+		display: grid;
+		grid-template-columns: minmax(120px, 160px) 1fr;
+		gap: 1.5rem;
+		align-items: center;
+		padding-bottom: 1.25rem;
+		border-bottom: 1px solid var(--color-border);
+	}
+
+	.posts__item:last-child {
+		border-bottom: none;
+		padding-bottom: 0;
+	}
+
+	.posts__date {
+		font-size: 0.85rem;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.posts__link {
+		font-size: 1rem;
+		color: var(--color-text);
+		transition: color var(--transition-base);
+	}
+
+	.posts__link:hover,
+	.posts__link:focus-visible {
+		color: var(--color-accent);
 	}
 
 	.status {
@@ -152,94 +238,27 @@ const formatDate = (isoDate: string) =>
 		color: #f87171;
 	}
 
-	.post-list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
+	.now {
 		display: flex;
 		flex-direction: column;
-		gap: 1.15rem;
+		gap: 1.75rem;
 	}
 
-	.post-list__item {
-		border-bottom: 1px solid var(--color-border);
-		padding-bottom: 1.15rem;
-	}
-
-	.post-list__item:last-child {
-		border-bottom: none;
-		padding-bottom: 0;
-	}
-
-	.post-list__link {
-		display: flex;
-		align-items: baseline;
-		justify-content: space-between;
-		gap: 1rem;
-		width: 100%;
-	}
-
-	.post-list__title {
-		font-size: 1rem;
-		font-weight: 500;
-		color: var(--color-text);
-		transition: color var(--transition-base);
-	}
-
-	.post-list__date {
-		flex-shrink: 0;
-		font-size: 0.85rem;
-		color: var(--color-muted);
-		letter-spacing: 0.04em;
-	}
-
-	.post-list__link:hover .post-list__title,
-	.post-list__link:focus-visible .post-list__title {
-		color: var(--color-accent);
-	}
-
-	.now-list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: grid;
-		gap: 1rem;
-	}
-
-	.now-list__item {
-		margin: 0;
-		padding: 1rem 1.2rem;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-card);
-		background: rgba(255, 255, 255, 0.02);
-		color: var(--color-text);
-		font-size: 0.95rem;
-		line-height: 1.6;
-	}
-
-	@media (max-width: 640px) {
-		.hero {
-			gap: 0.85rem;
-		}
-
-		.hero__bio {
-			font-size: 0.95rem;
-		}
-
-		.section__heading {
-			flex-direction: column;
-			align-items: flex-start;
-		}
-	}
-
-	@media (max-width: 560px) {
-		.post-list__link {
-			flex-direction: column;
+	@media (max-width: 720px) {
+		.posts__item {
+			grid-template-columns: 1fr;
+			gap: 0.75rem;
 			align-items: flex-start;
 		}
 
-		.post-list__date {
-			font-size: 0.8rem;
+		.section-header {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: 0.5rem;
+		}
+
+		.section-header__cta {
+			margin-left: 0;
 		}
 	}
 </style>

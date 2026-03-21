@@ -178,12 +178,7 @@ const FEED_ID = "now-feed-island";
 			renderPosts(posts);
 		} catch (error) {
 			console.error("[NowFeed]", error);
-			renderStatus(
-				typeof error?.message === "string"
-					? error.message
-					: "Unable to reach the Bluesky public API right now.",
-				"error"
-			);
+			renderStatus("No updates yet. Check back soon.", "empty");
 		}
 	};
 

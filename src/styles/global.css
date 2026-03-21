@@ -3,14 +3,14 @@
 :root {
   color-scheme: dark;
 
-  --color-bg: #1a1a1a;
-  --color-surface: #2a2a2a;
-  --color-border: #3a3a3a;
+  --color-bg: #0f0f0f;
+  --color-surface: #1a1a1a;
+  --color-border: #2a2a2a;
   --color-text: #e8e4d0;
   --color-muted: #6b7280;
   --color-accent: #4ade80;
 
-  --font-mono: "JetBrains Mono", monospace;
+  --font-mono: "JetBrains Mono";
 
   --radius-card: 10px;
 
@@ -51,7 +51,9 @@ body {
 a {
   color: var(--color-accent);
   text-decoration: none;
-  transition: color var(--transition-base), text-decoration var(--transition-base);
+  transition:
+    color var(--transition-base),
+    text-decoration var(--transition-base);
 }
 
 a:hover,
@@ -125,7 +127,9 @@ a:focus-visible {
   opacity: 0;
   transform: scaleX(0.2);
   transform-origin: center;
-  transition: opacity var(--transition-base), transform var(--transition-base);
+  transition:
+    opacity var(--transition-base),
+    transform var(--transition-base);
 }
 
 .site-nav__link:hover::after,
@@ -210,7 +214,10 @@ button {
   padding: 0.65rem 1.1rem;
   border-radius: calc(var(--radius-card) / 1.5);
   cursor: pointer;
-  transition: border-color var(--transition-base), color var(--transition-base), background var(--transition-base);
+  transition:
+    border-color var(--transition-base),
+    color var(--transition-base),
+    background var(--transition-base);
 }
 
 button:hover,
