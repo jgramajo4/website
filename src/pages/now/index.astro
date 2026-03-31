@@ -24,19 +24,19 @@ import NowFeed from "@/components/now/NowFeed.astro";
 	<section id="now-topics" class="now-topics">
 		<h2>Currently exploring</h2>
 		<ul>
-			<li>Reading: Placeholder book / paper title (I'll update this)</li>
-			<li>Building: Placeholder project focus or experiment</li>
-			<li>Listening: Placeholder podcast or mix</li>
-			<li>Tracking: Placeholder governance proposal or token experiment</li>
+			<li>Birding — logging sightings, gear, and patches</li>
+			<li>Meshcore — off-grid mesh networking and LoRa experiments</li>
+			<li>Chaumian ecash protocols — Cashu, Fedimint, and blind signatures</li>
+			<li>Zcash — shielded transactions and the cypherpunk privacy stack</li>
+			<li>RWAs — tokenizing collectibles and physical assets onchain</li>
 		</ul>
 	</section>
 
-	<section id="now-feed" class="now-feed">
+	<section id="now-feed" class="now-feed-wrapper">
 		<header class="now-feed__header">
 			<h2>Latest signals</h2>
 			<p>
-				Pulled directly from my Bluesky feed. Each entry links to its
-				permalink here.
+				Pulled from Bluesky, or my Telegram channel if Bluesky is unreachable.
 			</p>
 		</header>
 
@@ -76,22 +76,16 @@ import NowFeed from "@/components/now/NowFeed.astro";
 			topicsSection?.setAttribute("hidden", "");
 			feedSection?.setAttribute("hidden", "");
 
-			if (titleEl) {
-				titleEl.textContent = "Now update";
-			}
-			if (descEl) {
-				descEl.textContent = `Pulled live from Bluesky with rkey ${rkey}.`;
-			}
+			if (titleEl) titleEl.textContent = "Now update";
+			if (descEl) descEl.textContent = `Pulled live from Bluesky.`;
 
 			const renderStatus = (message, variant = "info") => {
 				if (!detailSection) return;
 				const isError = variant === "error";
-				const content = escapeHtml(message);
 				detailSection.innerHTML = `
 					<article class="now-post__card" data-state="${variant}">
-						<p class="now-post__status${isError ? " now-post__status--error" : ""}">${content}</p>
-					</article>
-				`;
+						<p class="now-post__status${isError ? " now-post__status--error" : ""}">${escapeHtml(message)}</p>
+					</article>`;
 			};
 
 			const renderPost = (htmlText, createdAtIso, createdAtLabel) => {
@@ -103,8 +97,7 @@ import NowFeed from "@/components/now/NowFeed.astro";
 							<button type="button" class="now-post__copy" data-status="idle">Copy link</button>
 						</header>
 						<p class="now-post__text">${htmlText}</p>
-					</article>
-				`;
+					</article>`;
 
 				const copyButton = detailSection.querySelector(".now-post__copy");
 				if (!copyButton) return;
@@ -116,37 +109,18 @@ import NowFeed from "@/components/now/NowFeed.astro";
 
 				copyButton.addEventListener("click", async () => {
 					try {
-						const targetUrl = window.location.href;
-						if (navigator.clipboard?.writeText) {
-							await navigator.clipboard.writeText(targetUrl);
-						} else {
-							const textarea = document.createElement("textarea");
-							textarea.value = targetUrl;
-							textarea.style.position = "fixed";
-							textarea.style.top = "-9999px";
-							document.body.appendChild(textarea);
-							textarea.focus();
-							textarea.select();
-							document.execCommand("copy");
-							document.body.removeChild(textarea);
-						}
+						await navigator.clipboard.writeText(window.location.href);
 						copyButton.dataset.status = "copied";
 						copyButton.textContent = "Copied ✓";
-					} catch (error) {
-						console.error("[Now] copy failed", error);
+					} catch {
 						copyButton.dataset.status = "error";
 						copyButton.textContent = "Copy failed";
-					} finally {
-						setTimeout(resetButton, 2500);
 					}
+					setTimeout(resetButton, 2500);
 				});
 			};
 
-			const endpoint = new URL("https://public.api.bsky.app/xrpc/com.atproto.repo.getRecord");
-			endpoint.searchParams.set("repo", "gramajo.xyz");
-			endpoint.searchParams.set("collection", "app.bsky.feed.post");
-			endpoint.searchParams.set("rkey", rkey);
-
+			// Resolve handle → DID first, then fetch the specific record
 			const formatter = new Intl.DateTimeFormat("en-US", {
 				dateStyle: "medium",
 				timeStyle: "short",
@@ -155,40 +129,42 @@ import NowFeed from "@/components/now/NowFeed.astro";
 			renderStatus("Fetching that update… hang tight.", "loading");
 
 			try {
-				const response = await fetch(endpoint.toString(), {
-					headers: { Accept: "application/json" },
-				});
+				const resolveResp = await fetch(
+					"https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=gramajo.xyz",
+					{ headers: { Accept: "application/json" } }
+				);
+				if (!resolveResp.ok) throw new Error("Handle resolve failed");
+				const { did } = await resolveResp.json();
+				if (!did) throw new Error("No DID returned");
 
-				if (!response.ok) {
-					throw new Error(`API responded with ${response.status}`);
-				}
+				const endpoint = new URL("https://public.api.bsky.app/xrpc/com.atproto.repo.getRecord");
+				endpoint.searchParams.set("repo", did);
+				endpoint.searchParams.set("collection", "app.bsky.feed.post");
+				endpoint.searchParams.set("rkey", rkey);
 
-				const payload = await response.json();
-				const record = payload?.value ?? {};
+				const response = await fetch(endpoint.toString(), { headers: { Accept: "application/json" } });
+				if (!response.ok) throw new Error(`API responded with ${response.status}`);
+
+				const data = await response.json();
+				const record = data?.value ?? {};
 				const text = typeof record.text === "string" ? record.text.trim() : "";
 				const createdAt = typeof record.createdAt === "string" ? record.createdAt : "";
 
-				if (!text || !createdAt) {
-					throw new Error("Post data was incomplete or malformed.");
-				}
+				if (!text || !createdAt) throw new Error("Post data was incomplete or malformed.");
 
 				const date = new Date(createdAt);
-				const createdAtLabel = Number.isNaN(date.getTime()) ? createdAt : formatter.format(date);
-
+				const createdAtLabel = isNaN(date.getTime()) ? createdAt : formatter.format(date);
 				renderPost(formatText(text), createdAt, createdAtLabel);
 			} catch (error) {
 				console.error("[Now] failed to load post", error);
-				const message = error instanceof Error ? error.message : "Unable to reach the Bluesky public API right now.";
-				renderStatus(message, "error");
+				renderStatus(error?.message ?? "Unable to reach the Bluesky API right now.", "error");
 			}
 		})();
 	</script>
 </BaseLayout>
 
 <style>
-	[hidden] {
-		display: none !important;
-	}
+	[hidden] { display: none !important; }
 
 	.page-header {
 		display: flex;
@@ -196,19 +172,16 @@ import NowFeed from "@/components/now/NowFeed.astro";
 		gap: 1rem;
 		margin-bottom: 2.75rem;
 	}
-
 	.page-header__back {
 		font-size: 0.82rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: var(--color-accent);
 	}
-
 	.page-title {
 		margin: 0;
 		font-size: clamp(2.1rem, 5vw, 2.8rem);
 	}
-
 	.page-description {
 		margin: 0;
 		max-width: 60ch;
@@ -216,156 +189,92 @@ import NowFeed from "@/components/now/NowFeed.astro";
 		font-size: 0.95rem;
 	}
 
+	/* ── Single post detail ── */
 	.detail-wrapper {
 		display: flex;
 		flex-direction: column;
 		gap: 1.75rem;
 	}
-
 	.now-post__card {
 		border: 1px solid var(--color-border);
 		border-radius: calc(var(--radius-card) / 1.1);
-		background: rgba(42, 42, 42, 0.75);
+		background: var(--color-surface-2);
 		padding: clamp(1.5rem, 4vw, 2.25rem);
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
-		box-shadow: 0 24px 50px rgba(0, 0, 0, 0.35);
+		box-shadow: var(--shadow-lift);
 	}
-
-	.now-post__status {
-		margin: 0;
-		color: var(--color-muted);
-		font-size: 0.95rem;
-	}
-
-	.now-post__status--error {
-		color: #f87171;
-	}
-
+	.now-post__status { margin: 0; color: var(--color-muted); font-size: 0.95rem; }
+	.now-post__status--error { color: var(--color-error); }
 	.now-post__header {
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
 	}
-
 	.now-post__timestamp {
 		color: var(--color-muted);
-		font-size: 0.85rem;
+		font-size: 0.82rem;
 		letter-spacing: 0.04em;
 		text-transform: uppercase;
 	}
-
 	.now-post__copy {
-		font-family: var(--font-mono);
-		font-size: 0.78rem;
+		font-size: 0.75rem;
 		letter-spacing: 0.08em;
 		text-transform: uppercase;
 		background: transparent;
-		border: 1px solid var(--color-border);
-		color: var(--color-text);
-		padding: 0.55rem 1rem;
-		border-radius: calc(var(--radius-card) / 2);
+		border: 1px solid var(--color-border-2);
+		color: var(--color-text-2);
+		padding: 0.45rem 0.9rem;
+		border-radius: var(--radius-sm);
 		cursor: pointer;
 		transition: border-color var(--transition-base), color var(--transition-base);
 	}
-
 	.now-post__copy:hover,
-	.now-post__copy:focus-visible,
-	.now-post__copy[data-status="copied"] {
-		border-color: var(--color-accent);
-		color: var(--color-accent);
-	}
+	.now-post__copy[data-status="copied"] { border-color: var(--color-accent); color: var(--color-accent); }
+	.now-post__copy[data-status="error"] { border-color: var(--color-error); color: var(--color-error); }
+	.now-post__text { margin: 0; color: var(--color-text); line-height: 1.7; font-size: 1rem; white-space: pre-wrap; }
 
-	.now-post__copy[data-status="error"] {
-		border-color: #f87171;
-		color: #f87171;
-	}
-
-	.now-post__text {
-		margin: 0;
-		color: var(--color-text);
-		line-height: 1.7;
-		font-size: 1.02rem;
-		white-space: pre-wrap;
-	}
-
+	/* ── Currently exploring ── */
 	.now-topics {
 		border: 1px solid var(--color-border);
 		border-radius: calc(var(--radius-card) / 1.2);
-		background: rgba(26, 26, 26, 0.55);
+		background: var(--color-surface-2);
 		padding: clamp(1.5rem, 4vw, 2rem);
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
 		margin-bottom: 3rem;
 	}
-
 	.now-topics h2 {
 		margin: 0;
-		font-size: 1.15rem;
-		letter-spacing: 0.05em;
+		font-size: 0.82rem;
+		letter-spacing: 0.1em;
 		text-transform: uppercase;
 		color: var(--color-accent);
 	}
-
 	.now-topics ul {
 		margin: 0;
 		padding-left: 1.5rem;
 		display: grid;
-		gap: 0.75rem;
+		gap: 0.65rem;
 	}
+	.now-topics li { color: var(--color-text); line-height: 1.6; font-size: 0.95rem; }
 
-	.now-topics li {
-		color: var(--color-text);
-		line-height: 1.6;
-	}
-
-	.now-feed {
+	/* ── Feed section ── */
+	.now-feed-wrapper {
 		display: flex;
 		flex-direction: column;
 		gap: 1.5rem;
 	}
-
-	.now-feed__header {
-		display: flex;
-		flex-direction: column;
-		gap: 0.6rem;
-	}
-
-	.now-feed__header h2 {
-		margin: 0;
-		font-size: 1.4rem;
-		letter-spacing: 0.05em;
-		text-transform: uppercase;
-	}
-
-	.now-feed__header p {
-		margin: 0;
-		max-width: 48ch;
-		font-size: 0.9rem;
-		color: var(--color-muted);
-	}
+	.now-feed__header { display: flex; flex-direction: column; gap: 0.5rem; }
+	.now-feed__header h2 { margin: 0; font-size: 0.82rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--color-accent); }
+	.now-feed__header p { margin: 0; max-width: 52ch; font-size: 0.88rem; color: var(--color-muted); }
 
 	@media (max-width: 620px) {
-		.now-post__header {
-			flex-direction: column;
-			align-items: flex-start;
-			gap: 0.75rem;
-		}
-
-		.now-post__copy {
-			width: 100%;
-			text-align: center;
-		}
-
-		.now-topics ul {
-			padding-left: 1.25rem;
-		}
-
-		.page-header__back {
-			font-size: 0.78rem;
-		}
+		.now-post__header { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+		.now-post__copy { width: 100%; text-align: center; }
+		.now-topics ul { padding-left: 1.25rem; }
 	}
 </style>
