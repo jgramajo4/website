@@ -49,6 +49,29 @@ const currentPath = Astro.url.pathname.replace(/\/+$/, "") || "/";
 					<slot />
 				</section>
 			</main>
+
+			<footer class="site-footer">
+				<div class="site-footer__left">
+					<span>gramajo.xyz</span>
+					<a href="https://gramajo.eth.limo" rel="noopener noreferrer">gramajo.eth</a>
+				</div>
+				<div class="site-footer__right">
+					<a
+						class="smallweb-badge"
+						href="https://kagi.com/smallweb"
+						rel="noopener noreferrer"
+						title="Part of the Kagi Small Web initiative"
+					>
+						<img
+							src="https://kagifeedback.org/assets/files/2025-11-27/1764250797-487602-80x15-1.png"
+							alt="Small Web"
+							width="80"
+							height="15"
+						/>
+					</a>
+					<a href="/feeds">rss</a>
+				</div>
+			</footer>
 		</div>
 	</body>
 </html>

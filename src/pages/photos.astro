@@ -1,0 +1,290 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+/**
+ * Photos page
+ *
+ * Drop your image URLs into the `photos` array below.
+ * Each entry supports:
+ *   - src:     required, the image URL
+ *   - alt:     required, descriptive alt text
+ *   - caption: optional, shown below the image
+ *   - location: optional, shown as a small label
+ *   - date:    optional ISO string, e.g. "2024-03-15"
+ *
+ * Images are displayed in a masonry-style grid.
+ * You can use any image host: Cloudflare Images, Cloudinary, R2, etc.
+ * For now, placeholders are included so the page renders immediately.
+ */
+
+type Photo = {
+	src: string;
+	alt: string;
+	caption?: string;
+	location?: string;
+	date?: string;
+	wide?: boolean; // spans full width on desktop
+};
+
+const photos: Photo[] = [
+	// ── Add your real photos here ──────────────────────────────────────────
+	// Example:
+	// {
+	//   src: "https://pub-youraccount.r2.dev/photos/buenos-aires-market.jpg",
+	//   alt: "Mercado San Telmo at golden hour",
+	//   location: "Buenos Aires, AR",
+	//   date: "2024-11-12",
+	// },
+	//
+	// Until you add photos, placeholder tiles are shown with a note.
+];
+
+const hasPhotos = photos.length > 0;
+
+const formatDate = (iso: string) =>
+	new Date(iso).toLocaleDateString("en-US", {
+		year: "numeric",
+		month: "short",
+	});
+---
+
+<BaseLayout
+	title="Photos"
+	description="A visual archive — birdwatching logs, cities, skateparks, and whatever else catches the eye."
+>
+	<header class="photos-header">
+		<p class="photos-eyebrow">/photos</p>
+		<h1 class="photos-title">Visual archive</h1>
+		<p class="photos-description">
+			Birdwatching logs, cities, skateparks, Buenos Aires light, Bay Area fog. No
+			filters, no particular order.
+		</p>
+	</header>
+
+	{hasPhotos ? (
+		<div class="photos-grid">
+			{photos.map((photo) => (
+				<figure class={`photo-item${photo.wide ? " photo-item--wide" : ""}`}>
+					<div class="photo-item__frame">
+						<img
+							src={photo.src}
+							alt={photo.alt}
+							loading="lazy"
+							decoding="async"
+						/>
+					</div>
+					{(photo.caption || photo.location || photo.date) && (
+						<figcaption class="photo-item__caption">
+							{photo.caption && (
+								<span class="photo-item__caption-text">{photo.caption}</span>
+							)}
+							<span class="photo-item__meta">
+								{photo.location && (
+									<span class="photo-item__location">{photo.location}</span>
+								)}
+								{photo.date && (
+									<time datetime={photo.date}>{formatDate(photo.date)}</time>
+								)}
+							</span>
+						</figcaption>
+					)}
+				</figure>
+			))}
+		</div>
+	) : (
+		<div class="photos-empty">
+			<div class="photos-empty__grid" aria-hidden="true">
+				{Array.from({ length: 6 }).map((_, i) => (
+					<div class="photos-empty__tile" style={`animation-delay: ${i * 80}ms`} />
+				))}
+			</div>
+			<div class="photos-empty__message">
+				<p class="photos-empty__label">— coming soon —</p>
+				<p>
+					This archive is being assembled. Check back soon for birdwatching logs,
+					Buenos Aires, skate spots, and field notes from the road.
+				</p>
+				<p class="photos-empty__note">
+					<em>
+						To add photos: populate the <code>photos</code> array in{" "}
+						<code>src/pages/photos.astro</code>.
+					</em>
+				</p>
+			</div>
+		</div>
+	)}
+</BaseLayout>
+
+<style>
+	/* ── Header ── */
+	.photos-header {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin-bottom: 2.5rem;
+	}
+
+	.photos-eyebrow {
+		margin: 0;
+		font-size: 0.75rem;
+		letter-spacing: 0.14em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.photos-title {
+		margin: 0;
+		font-size: clamp(2rem, 5vw, 2.8rem);
+		letter-spacing: -0.03em;
+	}
+
+	.photos-description {
+		margin: 0;
+		max-width: 56ch;
+		color: var(--color-text-2);
+		font-size: 0.92rem;
+		line-height: 1.7;
+	}
+
+	/* ── Grid ── */
+	.photos-grid {
+		columns: 2;
+		column-gap: 0.75rem;
+		width: 100%;
+	}
+
+	.photo-item {
+		break-inside: avoid;
+		margin: 0 0 0.75rem;
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+	}
+
+	.photo-item--wide {
+		column-span: all;
+	}
+
+	.photo-item__frame {
+		overflow: hidden;
+		border-radius: calc(var(--radius-card) / 1.5);
+		border: 1px solid var(--color-border);
+		background: var(--color-surface-2);
+		line-height: 0;
+	}
+
+	.photo-item__frame img {
+		width: 100%;
+		height: auto;
+		display: block;
+		transition: transform 0.4s ease, opacity 0.3s ease;
+		opacity: 0.92;
+	}
+
+	.photo-item:hover .photo-item__frame img {
+		transform: scale(1.02);
+		opacity: 1;
+	}
+
+	.photo-item__caption {
+		padding: 0.5rem 0.25rem 0;
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+	}
+
+	.photo-item__caption-text {
+		font-size: 0.82rem;
+		color: var(--color-text-2);
+		line-height: 1.5;
+	}
+
+	.photo-item__meta {
+		display: flex;
+		gap: 0.75rem;
+		font-size: 0.75rem;
+		color: var(--color-muted);
+		letter-spacing: 0.04em;
+	}
+
+	.photo-item__location::before {
+		content: "📍 ";
+		font-style: normal;
+	}
+
+	/* ── Empty state ── */
+	.photos-empty {
+		display: flex;
+		flex-direction: column;
+		gap: 2rem;
+	}
+
+	.photos-empty__grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 0.75rem;
+	}
+
+	.photos-empty__tile {
+		aspect-ratio: 4 / 3;
+		border-radius: calc(var(--radius-card) / 1.5);
+		background: var(--color-surface-2);
+		border: 1px solid var(--color-border);
+		animation: tile-pulse 2.4s ease-in-out infinite both;
+	}
+
+	@keyframes tile-pulse {
+		0%, 100% { opacity: 0.3; }
+		50%       { opacity: 0.6; }
+	}
+
+	.photos-empty__message {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		max-width: 52ch;
+	}
+
+	.photos-empty__label {
+		margin: 0;
+		font-size: 0.8rem;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+
+	.photos-empty__message p {
+		margin: 0;
+		color: var(--color-text-2);
+		font-size: 0.9rem;
+		line-height: 1.7;
+	}
+
+	.photos-empty__note {
+		padding: 0.75rem 1rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-sm);
+		background: var(--color-surface-2);
+	}
+
+	.photos-empty__note code {
+		color: var(--color-accent);
+	}
+
+	/* ── Responsive ── */
+	@media (max-width: 560px) {
+		.photos-grid {
+			columns: 1;
+		}
+
+		.photos-empty__grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	@media (min-width: 900px) {
+		.photos-grid {
+			columns: 3;
+		}
+	}
+</style>
