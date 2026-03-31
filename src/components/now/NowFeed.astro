@@ -1,14 +1,18 @@
 ---
-const BLUESKY_ENDPOINT = "https://public.api.bsky.app/xrpc/com.atproto.repo.listRecords";
-const BLUESKY_PARAMS = {
-	repo: "gramajo.xyz",
-	collection: "app.bsky.feed.post",
-	limit: "20",
-};
 const FEED_ID = "now-feed-island";
+const BLUESKY_REPO = "gramajo.xyz";
+const BLUESKY_COLLECTION = "app.bsky.feed.post";
+const BLUESKY_LIMIT = "20";
 ---
 
-<div id={FEED_ID} class="now-feed" data-state="loading" data-endpoint={BLUESKY_ENDPOINT} data-params={JSON.stringify(BLUESKY_PARAMS)}>
+<div
+	id={FEED_ID}
+	class="now-feed"
+	data-state="loading"
+	data-repo={BLUESKY_REPO}
+	data-collection={BLUESKY_COLLECTION}
+	data-limit={BLUESKY_LIMIT}
+>
 	<p class="now-feed__status">Loading the latest Now updates…</p>
 </div>
 
@@ -18,13 +22,14 @@ const FEED_ID = "now-feed-island";
 		flex-direction: column;
 		gap: 1.5rem;
 	}
-	.now-feed[data-state="error"] .now-feed__status {
-		color: #f87171;
+	.now-feed[data-state="error"] .now-feed__status,
+	.now-feed[data-state="empty"] .now-feed__status {
+		color: var(--color-muted);
 	}
 	.now-feed__status {
 		margin: 0;
 		color: var(--color-muted);
-		font-size: 0.95rem;
+		font-size: 0.92rem;
 	}
 	.now-feed__list {
 		list-style: none;
@@ -45,13 +50,13 @@ const FEED_ID = "now-feed-island";
 	.now-feed__post {
 		display: flex;
 		flex-direction: column;
-		gap: 0.9rem;
+		gap: 0.75rem;
 	}
 	.now-feed__text {
 		margin: 0;
 		white-space: pre-wrap;
-		line-height: 1.6;
-		font-size: 0.98rem;
+		line-height: 1.65;
+		font-size: 0.95rem;
 		color: var(--color-text);
 	}
 	.now-feed__meta {
@@ -59,13 +64,13 @@ const FEED_ID = "now-feed-island";
 		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
-		font-size: 0.82rem;
+		font-size: 0.78rem;
 		color: var(--color-muted);
 		letter-spacing: 0.04em;
-		text-transform: uppercase;
 	}
 	.now-feed__permalink {
-		font-size: 0.78rem;
+		color: var(--color-accent);
+		font-size: 0.75rem;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
 	}
@@ -77,110 +82,100 @@ const FEED_ID = "now-feed-island";
 	}
 </style>
 
-<script type="module" client:load>
-	const container = document.getElementById({JSON.stringify(FEED_ID)});
+<script>
+	(function () {
+		const container = document.getElementById("now-feed-island");
+		if (!container) return;
 
-	if (!container) {
-		console.warn("[NowFeed] Container not found");
-		return;
-	}
+		const repo = container.dataset.repo ?? "gramajo.xyz";
+		const collection = container.dataset.collection ?? "app.bsky.feed.post";
+		const limit = container.dataset.limit ?? "20";
 
-	const endpointValue = container.dataset.endpoint ?? "";
-	const endpoint = endpointValue ? new URL(endpointValue) : null;
-	const params = container.dataset.params ? JSON.parse(container.dataset.params) : {};
+		const endpoint = new URL("https://public.api.bsky.app/xrpc/com.atproto.repo.listRecords");
+		endpoint.searchParams.set("repo", repo);
+		endpoint.searchParams.set("collection", collection);
+		endpoint.searchParams.set("limit", limit);
 
-	if (!endpoint) {
-		console.warn("[NowFeed] Missing endpoint value");
-		return;
-	}
+		const dateFormatter = new Intl.DateTimeFormat("en-US", {
+			dateStyle: "medium",
+			timeStyle: "short",
+		});
 
-	for (const [key, value] of Object.entries(params)) {
-		if (value != null) {
-			endpoint.searchParams.set(key, String(value));
-		}
-	}
-
-	const dateFormatter = new Intl.DateTimeFormat("en-US", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	});
-
-	const renderStatus = (message, variant = "info") => {
-		container.dataset.state = variant === "error" ? "error" : variant;
-		container.innerHTML = `<p class="now-feed__status">${message}</p>`;
-	};
-
-	const renderPosts = (posts) => {
-		if (!posts.length) {
-			renderStatus("No Bluesky updates yet. Check back soon.", "empty");
-			return;
+		function escapeHtml(str: string): string {
+			return str
+				.replace(/&/g, "&amp;")
+				.replace(/</g, "&lt;")
+				.replace(/>/g, "&gt;");
 		}
 
-		const items = posts
-			.map(
-				(post) => `
-			<li class="now-feed__item">
-				<article class="now-feed__post">
-					<p class="now-feed__text">${post.text}</p>
-					<footer class="now-feed__meta">
-						<time datetime="${post.createdAtIso}">${post.createdAtLabel}</time>
-						<a class="now-feed__permalink" href="/now?rkey=${encodeURIComponent(post.rkey)}">open ↗</a>
-					</footer>
-				</article>
-			</li>
-		`.trim()
-			)
-			.join("");
+		function renderStatus(message: string, state = "info") {
+			container.dataset.state = state;
+			container.innerHTML = `<p class="now-feed__status">${escapeHtml(message)}</p>`;
+		}
 
-		container.dataset.state = "success";
-		container.innerHTML = `<ul class="now-feed__list">${items}</ul>`;
-	};
-
-	const normalizeRecords = (records) =>
-		records
-			.map((record) => {
-				const text = typeof record.value?.text === "string" ? record.value.text.trim() : "";
-				const createdAt = typeof record.value?.createdAt === "string" ? record.value.createdAt : null;
-
-				if (!text || !createdAt) {
-					return null;
-				}
-
-				const date = new Date(createdAt);
-				const createdAtLabel = Number.isNaN(date.getTime())
-					? createdAt
-					: dateFormatter.format(date);
-
-				return {
-					rkey: record.rkey,
-					text,
-					createdAtIso: createdAt,
-					createdAtLabel,
-				};
-			})
-			.filter(Boolean)
-			.sort((a, b) => new Date(b.createdAtIso).getTime() - new Date(a.createdAtIso).getTime());
-
-	const loadFeed = async () => {
-		renderStatus("Loading the latest Now updates…", "loading");
-
-		try {
-			const response = await fetch(endpoint.toString(), {
-				headers: { Accept: "application/json" },
-			});
-
-			if (!response.ok) {
-				throw new Error(`API responded with ${response.status}`);
+		function renderPosts(posts: Array<{ rkey: string; text: string; createdAtIso: string; createdAtLabel: string }>) {
+			if (!posts.length) {
+				renderStatus("No Bluesky updates yet. Check back soon.", "empty");
+				return;
 			}
 
-			const payload = await response.json();
-			const posts = normalizeRecords(payload.records || []);
-			renderPosts(posts);
-		} catch (error) {
-			console.error("[NowFeed]", error);
-			renderStatus("No updates yet. Check back soon.", "empty");
-		}
-	};
+			const items = posts
+				.map((post) => {
+					const text = escapeHtml(post.text);
+					const time = escapeHtml(post.createdAtIso);
+					const label = escapeHtml(post.createdAtLabel);
+					const rkey = encodeURIComponent(post.rkey);
+					return `<li class="now-feed__item">
+						<article class="now-feed__post">
+							<p class="now-feed__text">${text}</p>
+							<footer class="now-feed__meta">
+								<time datetime="${time}">${label}</time>
+								<a class="now-feed__permalink" href="/now?rkey=${rkey}">open ↗</a>
+							</footer>
+						</article>
+					</li>`;
+				})
+				.join("");
 
-	loadFeed();
+			container.dataset.state = "success";
+			container.innerHTML = `<ul class="now-feed__list">${items}</ul>`;
+		}
+
+		function normalizeRecords(records: unknown[]): Array<{ rkey: string; text: string; createdAtIso: string; createdAtLabel: string }> {
+			return records
+				.map((record: unknown) => {
+					const r = record as { rkey?: string; value?: { text?: unknown; createdAt?: unknown } };
+					const text = typeof r.value?.text === "string" ? r.value.text.trim() : "";
+					const createdAt = typeof r.value?.createdAt === "string" ? r.value.createdAt : null;
+					if (!text || !createdAt || !r.rkey) return null;
+
+					const date = new Date(createdAt);
+					const createdAtLabel = Number.isNaN(date.getTime())
+						? createdAt
+						: dateFormatter.format(date);
+
+					return { rkey: r.rkey, text, createdAtIso: createdAt, createdAtLabel };
+				})
+				.filter((x): x is NonNullable<typeof x> => x !== null)
+				.sort((a, b) => new Date(b.createdAtIso).getTime() - new Date(a.createdAtIso).getTime());
+		}
+
+		async function loadFeed() {
+			renderStatus("Loading the latest Now updates…", "loading");
+			try {
+				const response = await fetch(endpoint.toString(), {
+					headers: { Accept: "application/json" },
+				});
+				if (!response.ok) throw new Error(`API responded with ${response.status}`);
+				const payload = await response.json() as { records?: unknown[] };
+				const posts = normalizeRecords(payload.records ?? []);
+				renderPosts(posts);
+			} catch (error) {
+				console.error("[NowFeed]", error);
+				renderStatus("No updates yet. Check back soon.", "empty");
+			}
+		}
+
+		loadFeed();
+	})();
 </script>
