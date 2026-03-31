@@ -4,18 +4,20 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 /**
  * Photos page
  *
- * Drop your image URLs into the `photos` array below.
- * Each entry supports:
- *   - src:     required, the image URL
- *   - alt:     required, descriptive alt text
- *   - caption: optional, shown below the image
- *   - location: optional, shown as a small label
- *   - date:    optional ISO string, e.g. "2024-03-15"
- *
- * Images are displayed in a masonry-style grid.
- * You can use any image host: Cloudflare Images, Cloudinary, R2, etc.
- * For now, placeholders are included so the page renders immediately.
+ * To add a photo, append an entry to the `photos` array.
+ * Fields:
+ *   src      — path relative to /public, or a full URL
+ *   alt      — descriptive alt text (required)
+ *   caption  — optional caption shown below
+ *   location — optional location string
+ *   date     — optional ISO date string "YYYY-MM-DD"
+ *   camera   — one of: "nikon-f3" | "fujifilm-xt5" | "fujifilm-xt2" | "iphone"
+ *   medium   — one of: "film" | "digital"
+ *   wide     — optional boolean, spans full width on desktop
  */
+
+type Camera = "nikon-f3" | "fujifilm-xt5" | "fujifilm-xt2" | "iphone";
+type Medium = "film" | "digital";
 
 type Photo = {
 	src: string;
@@ -23,96 +25,112 @@ type Photo = {
 	caption?: string;
 	location?: string;
 	date?: string;
-	wide?: boolean; // spans full width on desktop
+	camera?: Camera;
+	medium?: Medium;
+	wide?: boolean;
 };
 
 const photos: Photo[] = [
-	// ── Add your real photos here ──────────────────────────────────────────
-	// Example:
-	// {
-	//   src: "https://pub-youraccount.r2.dev/photos/buenos-aires-market.jpg",
-	//   alt: "Mercado San Telmo at golden hour",
-	//   location: "Buenos Aires, AR",
-	//   date: "2024-11-12",
-	// },
-	//
-	// Until you add photos, placeholder tiles are shown with a note.
+	{
+		src: "/photos/foggy-street-nikon-f3.jpg",
+		alt: "Foggy street at night, streetlights glowing through thick mist, car headlights in the distance",
+		location: "Bay Area, CA",
+		date: "2022-02-27",
+		camera: "nikon-f3",
+		medium: "film",
+	},
 ];
 
-const hasPhotos = photos.length > 0;
+const cameraLabels: Record<Camera, string> = {
+	"nikon-f3":     "Nikon F3",
+	"fujifilm-xt5": "Fujifilm XT5",
+	"fujifilm-xt2": "Fujifilm XT2",
+	"iphone":       "iPhone",
+};
 
 const formatDate = (iso: string) =>
-	new Date(iso).toLocaleDateString("en-US", {
-		year: "numeric",
-		month: "short",
-	});
+	new Date(iso).toLocaleDateString("en-US", { year: "numeric", month: "short" });
 ---
 
 <BaseLayout
 	title="Photos"
-	description="A visual archive — birdwatching logs, cities, skateparks, and whatever else catches the eye."
+	description="A visual archive — film and digital from the Nikon F3, Fujifilm XT5, XT2, iPhone, and whatever else is in hand."
 >
 	<header class="photos-header">
 		<p class="photos-eyebrow">/photos</p>
 		<h1 class="photos-title">Visual archive</h1>
 		<p class="photos-description">
-			Birdwatching logs, cities, skateparks, Buenos Aires light, Bay Area fog. No
-			filters, no particular order.
+			Birdwatching logs, cities, skateparks, Buenos Aires light, Bay Area fog.
+			Shot on film and digital.
 		</p>
 	</header>
 
-	{hasPhotos ? (
-		<div class="photos-grid">
-			{photos.map((photo) => (
-				<figure class={`photo-item${photo.wide ? " photo-item--wide" : ""}`}>
-					<div class="photo-item__frame">
-						<img
-							src={photo.src}
-							alt={photo.alt}
-							loading="lazy"
-							decoding="async"
-						/>
-					</div>
-					{(photo.caption || photo.location || photo.date) && (
-						<figcaption class="photo-item__caption">
-							{photo.caption && (
-								<span class="photo-item__caption-text">{photo.caption}</span>
-							)}
-							<span class="photo-item__meta">
-								{photo.location && (
-									<span class="photo-item__location">{photo.location}</span>
-								)}
-								{photo.date && (
-									<time datetime={photo.date}>{formatDate(photo.date)}</time>
-								)}
+	<!-- Filter bar -->
+	<div class="filter-bar" role="group" aria-label="Filter photos">
+		<div class="filter-group">
+			<span class="filter-label">Camera</span>
+			<div class="filter-pills">
+				<button class="filter-pill filter-pill--active" data-filter="camera" data-value="all">All</button>
+				<button class="filter-pill" data-filter="camera" data-value="nikon-f3">Nikon F3</button>
+				<button class="filter-pill" data-filter="camera" data-value="fujifilm-xt5">Fujifilm XT5</button>
+				<button class="filter-pill" data-filter="camera" data-value="fujifilm-xt2">Fujifilm XT2</button>
+				<button class="filter-pill" data-filter="camera" data-value="iphone">iPhone</button>
+			</div>
+		</div>
+		<div class="filter-group">
+			<span class="filter-label">Medium</span>
+			<div class="filter-pills">
+				<button class="filter-pill filter-pill--active" data-filter="medium" data-value="all">All</button>
+				<button class="filter-pill" data-filter="medium" data-value="film">Film</button>
+				<button class="filter-pill" data-filter="medium" data-value="digital">Digital</button>
+			</div>
+		</div>
+	</div>
+
+	<!-- Grid -->
+	<div class="photos-grid" id="photos-grid">
+		{photos.map((photo) => (
+			<figure
+				class={`photo-item${photo.wide ? " photo-item--wide" : ""}`}
+				data-camera={photo.camera ?? ""}
+				data-medium={photo.medium ?? ""}
+			>
+				<div class="photo-item__frame">
+					<img
+						src={photo.src}
+						alt={photo.alt}
+						loading="lazy"
+						decoding="async"
+					/>
+				</div>
+				<figcaption class="photo-item__caption">
+					<div class="photo-item__tags">
+						{photo.camera && (
+							<span class="photo-item__tag photo-item__tag--camera">
+								{cameraLabels[photo.camera]}
 							</span>
-						</figcaption>
-					)}
-				</figure>
-			))}
-		</div>
-	) : (
-		<div class="photos-empty">
-			<div class="photos-empty__grid" aria-hidden="true">
-				{Array.from({ length: 6 }).map((_, i) => (
-					<div class="photos-empty__tile" style={`animation-delay: ${i * 80}ms`} />
-				))}
-			</div>
-			<div class="photos-empty__message">
-				<p class="photos-empty__label">— coming soon —</p>
-				<p>
-					This archive is being assembled. Check back soon for birdwatching logs,
-					Buenos Aires, skate spots, and field notes from the road.
-				</p>
-				<p class="photos-empty__note">
-					<em>
-						To add photos: populate the <code>photos</code> array in{" "}
-						<code>src/pages/photos.astro</code>.
-					</em>
-				</p>
-			</div>
-		</div>
-	)}
+						)}
+						{photo.medium && (
+							<span class={`photo-item__tag photo-item__tag--medium photo-item__tag--${photo.medium}`}>
+								{photo.medium}
+							</span>
+						)}
+					</div>
+					<div class="photo-item__meta">
+						{photo.location && <span class="photo-item__location">{photo.location}</span>}
+						{photo.date && <time datetime={photo.date}>{formatDate(photo.date)}</time>}
+					</div>
+					{photo.caption && <p class="photo-item__caption-text">{photo.caption}</p>}
+				</figcaption>
+			</figure>
+		))}
+	</div>
+
+	<p class="photos-count" id="photos-count" aria-live="polite"></p>
+
+	<p class="photos-empty" id="photos-empty" hidden>
+		No photos match those filters.
+	</p>
 </BaseLayout>
 
 <style>
@@ -121,9 +139,8 @@ const formatDate = (iso: string) =>
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
-		margin-bottom: 2.5rem;
+		margin-bottom: 2rem;
 	}
-
 	.photos-eyebrow {
 		margin: 0;
 		font-size: 0.75rem;
@@ -131,13 +148,11 @@ const formatDate = (iso: string) =>
 		text-transform: uppercase;
 		color: var(--color-muted);
 	}
-
 	.photos-title {
 		margin: 0;
 		font-size: clamp(2rem, 5vw, 2.8rem);
 		letter-spacing: -0.03em;
 	}
-
 	.photos-description {
 		margin: 0;
 		max-width: 56ch;
@@ -146,13 +161,64 @@ const formatDate = (iso: string) =>
 		line-height: 1.7;
 	}
 
+	/* ── Filter bar ── */
+	.filter-bar {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin-bottom: 2rem;
+		padding: 1.1rem 1.25rem;
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-card);
+		background: var(--color-surface-2);
+	}
+	.filter-group {
+		display: flex;
+		align-items: center;
+		gap: 0.75rem;
+		flex-wrap: wrap;
+	}
+	.filter-label {
+		font-size: 0.72rem;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+		min-width: 4.5rem;
+		flex-shrink: 0;
+	}
+	.filter-pills {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+	}
+	.filter-pill {
+		font-size: 0.75rem;
+		letter-spacing: 0.05em;
+		padding: 0.3rem 0.7rem;
+		border-radius: 999px;
+		border: 1px solid var(--color-border-2);
+		background: transparent;
+		color: var(--color-muted);
+		cursor: pointer;
+		transition: border-color var(--transition-base), color var(--transition-base), background var(--transition-base);
+		line-height: 1;
+	}
+	.filter-pill:hover {
+		border-color: var(--color-accent);
+		color: var(--color-text);
+	}
+	.filter-pill--active {
+		border-color: var(--color-accent);
+		color: var(--color-accent);
+		background: var(--color-accent-dim);
+	}
+
 	/* ── Grid ── */
 	.photos-grid {
 		columns: 2;
 		column-gap: 0.75rem;
 		width: 100%;
 	}
-
 	.photo-item {
 		break-inside: avoid;
 		margin: 0 0 0.75rem;
@@ -160,11 +226,12 @@ const formatDate = (iso: string) =>
 		flex-direction: column;
 		gap: 0;
 	}
-
 	.photo-item--wide {
 		column-span: all;
 	}
-
+	.photo-item[hidden] {
+		display: none !important;
+	}
 	.photo-item__frame {
 		overflow: hidden;
 		border-radius: calc(var(--radius-card) / 1.5);
@@ -172,119 +239,144 @@ const formatDate = (iso: string) =>
 		background: var(--color-surface-2);
 		line-height: 0;
 	}
-
 	.photo-item__frame img {
 		width: 100%;
 		height: auto;
 		display: block;
 		transition: transform 0.4s ease, opacity 0.3s ease;
-		opacity: 0.92;
+		opacity: 0.9;
 	}
-
 	.photo-item:hover .photo-item__frame img {
-		transform: scale(1.02);
+		transform: scale(1.015);
 		opacity: 1;
 	}
 
+	/* ── Caption ── */
 	.photo-item__caption {
 		padding: 0.5rem 0.25rem 0;
 		display: flex;
 		flex-direction: column;
-		gap: 0.2rem;
+		gap: 0.3rem;
 	}
-
-	.photo-item__caption-text {
-		font-size: 0.82rem;
-		color: var(--color-text-2);
-		line-height: 1.5;
+	.photo-item__tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.3rem;
 	}
-
+	.photo-item__tag {
+		font-size: 0.68rem;
+		letter-spacing: 0.07em;
+		text-transform: uppercase;
+		padding: 0.15rem 0.45rem;
+		border-radius: 3px;
+		border: 1px solid transparent;
+	}
+	.photo-item__tag--camera {
+		color: var(--color-muted);
+		border-color: var(--color-border-2);
+	}
+	.photo-item__tag--film {
+		color: #c8a96e;
+		border-color: rgba(200, 169, 110, 0.3);
+		background: rgba(200, 169, 110, 0.08);
+	}
+	.photo-item__tag--digital {
+		color: #7db8c8;
+		border-color: rgba(125, 184, 200, 0.3);
+		background: rgba(125, 184, 200, 0.08);
+	}
 	.photo-item__meta {
 		display: flex;
 		gap: 0.75rem;
 		font-size: 0.75rem;
 		color: var(--color-muted);
+		letter-spacing: 0.03em;
+	}
+	.photo-item__caption-text {
+		margin: 0;
+		font-size: 0.82rem;
+		color: var(--color-text-2);
+		line-height: 1.5;
+	}
+
+	/* ── Count / empty ── */
+	.photos-count {
+		margin: 0.5rem 0 0;
+		font-size: 0.75rem;
+		color: var(--color-muted);
 		letter-spacing: 0.04em;
 	}
-
-	.photo-item__location::before {
-		content: "📍 ";
-		font-style: normal;
-	}
-
-	/* ── Empty state ── */
 	.photos-empty {
-		display: flex;
-		flex-direction: column;
-		gap: 2rem;
-	}
-
-	.photos-empty__grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: 0.75rem;
-	}
-
-	.photos-empty__tile {
-		aspect-ratio: 4 / 3;
-		border-radius: calc(var(--radius-card) / 1.5);
-		background: var(--color-surface-2);
-		border: 1px solid var(--color-border);
-		animation: tile-pulse 2.4s ease-in-out infinite both;
-	}
-
-	@keyframes tile-pulse {
-		0%, 100% { opacity: 0.3; }
-		50%       { opacity: 0.6; }
-	}
-
-	.photos-empty__message {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-		max-width: 52ch;
-	}
-
-	.photos-empty__label {
-		margin: 0;
-		font-size: 0.8rem;
-		letter-spacing: 0.12em;
-		text-transform: uppercase;
-		color: var(--color-muted);
-	}
-
-	.photos-empty__message p {
-		margin: 0;
-		color: var(--color-text-2);
+		margin: 2rem 0 0;
 		font-size: 0.9rem;
-		line-height: 1.7;
-	}
-
-	.photos-empty__note {
-		padding: 0.75rem 1rem;
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-sm);
-		background: var(--color-surface-2);
-	}
-
-	.photos-empty__note code {
-		color: var(--color-accent);
+		color: var(--color-muted);
 	}
 
 	/* ── Responsive ── */
 	@media (max-width: 560px) {
-		.photos-grid {
-			columns: 1;
-		}
-
-		.photos-empty__grid {
-			grid-template-columns: repeat(2, 1fr);
-		}
+		.photos-grid { columns: 1; }
+		.filter-group { gap: 0.5rem; }
+		.filter-label { min-width: 3.5rem; }
 	}
-
 	@media (min-width: 900px) {
-		.photos-grid {
-			columns: 3;
-		}
+		.photos-grid { columns: 3; }
 	}
 </style>
+
+<script>
+(function () {
+	var activeCamera = "all";
+	var activeMedium = "all";
+
+	var grid = document.getElementById("photos-grid");
+	var emptyMsg = document.getElementById("photos-empty");
+	var countEl = document.getElementById("photos-count");
+	var items = grid ? Array.from(grid.querySelectorAll(".photo-item")) : [];
+
+	function applyFilters() {
+		var visible = 0;
+		items.forEach(function (item) {
+			var cam = item.dataset.camera || "";
+			var med = item.dataset.medium || "";
+			var show =
+				(activeCamera === "all" || cam === activeCamera) &&
+				(activeMedium === "all" || med === activeMedium);
+			if (show) {
+				item.removeAttribute("hidden");
+				visible++;
+			} else {
+				item.setAttribute("hidden", "");
+			}
+		});
+
+		if (emptyMsg) {
+			if (visible === 0) emptyMsg.removeAttribute("hidden");
+			else emptyMsg.setAttribute("hidden", "");
+		}
+		if (countEl) {
+			countEl.textContent = visible + " of " + items.length + " photo" + (items.length !== 1 ? "s" : "");
+		}
+	}
+
+	document.querySelectorAll(".filter-pill").forEach(function (pill) {
+		pill.addEventListener("click", function () {
+			var filterType = pill.dataset.filter;
+			var value = pill.dataset.value;
+
+			// Update active pill within this filter group
+			document.querySelectorAll('.filter-pill[data-filter="' + filterType + '"]').forEach(function (p) {
+				p.classList.remove("filter-pill--active");
+			});
+			pill.classList.add("filter-pill--active");
+
+			if (filterType === "camera") activeCamera = value;
+			if (filterType === "medium") activeMedium = value;
+
+			applyFilters();
+		});
+	});
+
+	// Init count
+	applyFilters();
+})();
+</script>
