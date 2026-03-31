@@ -3,243 +3,316 @@ const FEED_ID = "now-feed-island";
 ---
 
 <div id={FEED_ID} class="now-feed" data-state="loading">
-	<p class="now-feed__status">Loading the latest updates…</p>
+    <p class="now-feed__status">Loading the latest updates…</p>
 </div>
 
 <style>
-	.now-feed {
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-	}
-	.now-feed__status {
-		margin: 0;
-		color: var(--color-muted);
-		font-size: 0.92rem;
-	}
-	.now-feed__source-label {
-		display: inline-block;
-		font-size: 0.72rem;
-		letter-spacing: 0.08em;
-		text-transform: uppercase;
-		color: var(--color-muted);
-		border: 1px solid var(--color-border);
-		padding: 0.15rem 0.5rem;
-		border-radius: 3px;
-		margin-bottom: 1rem;
-	}
-	.now-feed__list {
-		list-style: none;
-		margin: 0;
-		padding: 0;
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-	}
-	.now-feed__item {
-		padding-bottom: 1.5rem;
-		border-bottom: 1px solid var(--color-border);
-	}
-	.now-feed__item:last-child {
-		border-bottom: none;
-		padding-bottom: 0;
-	}
-	.now-feed__post {
-		display: flex;
-		flex-direction: column;
-		gap: 0.75rem;
-	}
-	.now-feed__text {
-		margin: 0;
-		white-space: pre-wrap;
-		line-height: 1.65;
-		font-size: 0.95rem;
-		color: var(--color-text);
-	}
-	.now-feed__meta {
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 1rem;
-		font-size: 0.78rem;
-		color: var(--color-muted);
-		letter-spacing: 0.04em;
-	}
-	.now-feed__permalink {
-		color: var(--color-accent);
-		font-size: 0.75rem;
-		letter-spacing: 0.06em;
-		text-transform: uppercase;
-	}
-	@media (max-width: 540px) {
-		.now-feed__meta {
-			flex-direction: column;
-			align-items: flex-start;
-		}
-	}
+    .now-feed {
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    .now-feed__status {
+        margin: 0;
+        color: var(--color-muted);
+        font-size: 0.92rem;
+    }
+    .now-feed__source-label {
+        margin: 0 0 0.25rem;
+        font-size: 0.72rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--color-muted);
+    }
+    .now-feed__source-label a {
+        color: var(--color-muted);
+        border-bottom: 1px solid var(--color-border-2);
+        transition:
+            color var(--transition-base),
+            border-color var(--transition-base);
+    }
+    .now-feed__source-label a:hover {
+        color: var(--color-accent);
+        border-color: var(--color-accent);
+        text-decoration: none;
+    }
+    .now-feed__list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 1.5rem;
+    }
+    .now-feed__item {
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--color-border);
+    }
+    .now-feed__item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    .now-feed__post {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+    .now-feed__text {
+        margin: 0;
+        white-space: pre-wrap;
+        line-height: 1.65;
+        font-size: 0.95rem;
+        color: var(--color-text);
+    }
+    .now-feed__meta {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        font-size: 0.78rem;
+        color: var(--color-muted);
+        letter-spacing: 0.04em;
+    }
+    .now-feed__permalink {
+        color: var(--color-accent);
+        font-size: 0.75rem;
+        letter-spacing: 0.06em;
+        text-transform: uppercase;
+    }
+    @media (max-width: 540px) {
+        .now-feed__meta {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
 </style>
 
 <script>
-(function () {
-	var container = document.getElementById("now-feed-island");
-	if (!container) return;
+    (function () {
+        var container = document.getElementById("now-feed-island");
+        if (!container) return;
 
-	var BSKY_HANDLE = "gramajo.xyz";
-	var TELEGRAM_RSS = "https://fetchrss.com/feed/1w7Qnw9JKA3G1w7QnREKMEpH.rss";
+        var BSKY_DID = "did:plc:5253luauct5pfcww35cvrn3d"; // gramajo.xyz
+        var TELEGRAM_RSS =
+            "https://fetchrss.com/feed/1w7Qnw9JKA3G1w7QnREKMEpH.rss";
 
-	var dateFormatter = new Intl.DateTimeFormat("en-US", {
-		dateStyle: "medium",
-		timeStyle: "short",
-	});
+        var dateFormatter = new Intl.DateTimeFormat("en-US", {
+            dateStyle: "medium",
+            timeStyle: "short",
+        });
 
-	function escapeHtml(str) {
-		return String(str)
-			.replace(/&/g, "&amp;")
-			.replace(/</g, "&lt;")
-			.replace(/>/g, "&gt;");
-	}
+        function escapeHtml(str) {
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;");
+        }
 
-	function renderStatus(message, state) {
-		container.dataset.state = state || "info";
-		container.innerHTML = '<p class="now-feed__status">' + escapeHtml(message) + "</p>";
-	}
+        function renderStatus(message, state) {
+            container.dataset.state = state || "info";
+            container.innerHTML =
+                '<p class="now-feed__status">' + escapeHtml(message) + "</p>";
+        }
 
-	function renderPosts(posts, sourceLabel) {
-		if (!posts.length) {
-			renderStatus("No updates yet. Check back soon.", "empty");
-			return;
-		}
-		var labelHtml = sourceLabel
-			? '<span class="now-feed__source-label">' + escapeHtml(sourceLabel) + "</span>"
-			: "";
-		var items = posts.map(function (post) {
-			var text = escapeHtml(post.text);
-			var time = escapeHtml(post.createdAtIso);
-			var timeLabel = escapeHtml(post.createdAtLabel);
-			var href = post.href ? escapeHtml(post.href) : "";
-			var linkHtml = href
-				? '<a class="now-feed__permalink" href="' + href + '" rel="noopener noreferrer">open ↗</a>'
-				: "";
-			return (
-				'<li class="now-feed__item"><article class="now-feed__post">' +
-				'<p class="now-feed__text">' + text + "</p>" +
-				'<footer class="now-feed__meta">' +
-				'<time datetime="' + time + '">' + timeLabel + "</time>" +
-				linkHtml +
-				"</footer></article></li>"
-			);
-		}).join("");
-		container.dataset.state = "success";
-		container.innerHTML = labelHtml + '<ul class="now-feed__list">' + items + "</ul>";
-	}
+        var SOURCE_LINKS = {
+            bluesky: "https://bsky.app/profile/gramajo.xyz",
+            "telegram / castlelogs": "https://t.me/castlelogs",
+        };
 
-	// ── Bluesky (resolve handle → DID → list records) ──────────────────────
+        function renderPosts(posts, sourceLabel) {
+            if (!posts.length) {
+                renderStatus("No updates yet. Check back soon.", "empty");
+                return;
+            }
+            var sourceUrl = sourceLabel ? SOURCE_LINKS[sourceLabel] : null;
+            var labelHtml = sourceLabel
+                ? '<p class="now-feed__source-label">' +
+                  (sourceUrl
+                      ? '<a href="' +
+                        sourceUrl +
+                        '" rel="noopener noreferrer">' +
+                        escapeHtml(sourceLabel) +
+                        " ↗</a>"
+                      : escapeHtml(sourceLabel)) +
+                  "</p>"
+                : "";
+            var items = posts
+                .map(function (post) {
+                    var text = escapeHtml(post.text);
+                    var time = escapeHtml(post.createdAtIso);
+                    var timeLabel = escapeHtml(post.createdAtLabel);
+                    var href = post.href ? escapeHtml(post.href) : "";
+                    var linkHtml = href
+                        ? '<a class="now-feed__permalink" href="' +
+                          href +
+                          '" rel="noopener noreferrer">open ↗</a>'
+                        : "";
+                    return (
+                        '<li class="now-feed__item"><article class="now-feed__post">' +
+                        '<p class="now-feed__text">' +
+                        text +
+                        "</p>" +
+                        '<footer class="now-feed__meta">' +
+                        '<time datetime="' +
+                        time +
+                        '">' +
+                        timeLabel +
+                        "</time>" +
+                        linkHtml +
+                        "</footer></article></li>"
+                    );
+                })
+                .join("");
+            container.dataset.state = "success";
+            container.innerHTML =
+                labelHtml + '<ul class="now-feed__list">' + items + "</ul>";
+        }
 
-	function loadBluesky() {
-		var resolveUrl = "https://public.api.bsky.app/xrpc/com.atproto.identity.resolveHandle?handle=" + encodeURIComponent(BSKY_HANDLE);
-		return fetch(resolveUrl, { headers: { Accept: "application/json" } })
-			.then(function (r) {
-				if (!r.ok) throw new Error("Handle resolve failed: " + r.status);
-				return r.json();
-			})
-			.then(function (data) {
-				if (!data.did) throw new Error("No DID returned");
-				var listUrl = "https://public.api.bsky.app/xrpc/com.atproto.repo.listRecords" +
-					"?repo=" + encodeURIComponent(data.did) +
-					"&collection=app.bsky.feed.post&limit=20";
-				return fetch(listUrl, { headers: { Accept: "application/json" } });
-			})
-			.then(function (r) {
-				if (!r.ok) throw new Error("listRecords failed: " + r.status);
-				return r.json();
-			})
-			.then(function (payload) {
-				var records = Array.isArray(payload.records) ? payload.records : [];
-				var posts = records
-					.map(function (r) {
-						var text = r.value && typeof r.value.text === "string" ? r.value.text.trim() : "";
-						var createdAt = r.value && typeof r.value.createdAt === "string" ? r.value.createdAt : null;
-						if (!text || !createdAt || !r.rkey) return null;
-						var date = new Date(createdAt);
-						return {
-							text: text,
-							createdAtIso: createdAt,
-							createdAtLabel: isNaN(date.getTime()) ? createdAt : dateFormatter.format(date),
-							href: "/now?rkey=" + encodeURIComponent(r.rkey),
-						};
-					})
-					.filter(Boolean)
-					.sort(function (a, b) {
-						return new Date(b.createdAtIso).getTime() - new Date(a.createdAtIso).getTime();
-					});
-				if (!posts.length) throw new Error("No posts returned from Bluesky");
-				renderPosts(posts, "bluesky");
-			});
-	}
+        // ── Bluesky (direct DID, no resolve step needed) ───────────────────────
 
-	// ── Telegram RSS fallback ───────────────────────────────────────────────
+        function loadBluesky() {
+            // Build URL manually — do NOT encode the DID as it contains colons that must stay intact
+            var listUrl =
+                "https://public.api.bsky.app/xrpc/com.atproto.repo.listRecords?repo=" +
+                BSKY_DID +
+                "&collection=app.bsky.feed.post&limit=20";
+            console.log("[NowFeed] Fetching:", listUrl);
+            return fetch(listUrl, { headers: { Accept: "application/json" } })
+                .then(function (r) {
+                    if (!r.ok) throw new Error("listRecords HTTP " + r.status);
+                    return r.json();
+                })
+                .then(function (payload) {
+                    console.log("[NowFeed] Bluesky payload:", payload);
+                    var records = Array.isArray(payload.records)
+                        ? payload.records
+                        : [];
+                    console.log(
+                        "[NowFeed] Bluesky record count:",
+                        records.length,
+                    );
+                    var posts = records
+                        .map(function (r) {
+                            var text =
+                                r.value && typeof r.value.text === "string"
+                                    ? r.value.text.trim()
+                                    : "";
+                            var createdAt =
+                                r.value && typeof r.value.createdAt === "string"
+                                    ? r.value.createdAt
+                                    : null;
+                            if (!text || !createdAt || !r.rkey) return null;
+                            var date = new Date(createdAt);
+                            return {
+                                text: text,
+                                createdAtIso: createdAt,
+                                createdAtLabel: isNaN(date.getTime())
+                                    ? createdAt
+                                    : dateFormatter.format(date),
+                                href: "/now?rkey=" + encodeURIComponent(r.rkey),
+                            };
+                        })
+                        .filter(Boolean)
+                        .sort(function (a, b) {
+                            return (
+                                new Date(b.createdAtIso).getTime() -
+                                new Date(a.createdAtIso).getTime()
+                            );
+                        });
+                    if (!posts.length)
+                        throw new Error(
+                            "Zero posts in Bluesky response (records: " +
+                                records.length +
+                                ")",
+                        );
+                    renderPosts(posts, "bluesky");
+                });
+        }
 
-	function loadTelegram() {
-		var proxyUrl = "https://api.allorigins.win/raw?url=" + encodeURIComponent(TELEGRAM_RSS);
-		return fetch(proxyUrl)
-			.then(function (r) {
-				if (!r.ok) throw new Error("Telegram RSS fetch failed: " + r.status);
-				return r.text();
-			})
-			.then(function (xmlText) {
-				var parser = new DOMParser();
-				var doc = parser.parseFromString(xmlText, "application/xml");
-				var items = Array.from(doc.querySelectorAll("item"));
-				var posts = items
-					.map(function (item) {
-						var titleEl = item.querySelector("title");
-						var descEl = item.querySelector("description");
-						var linkEl = item.querySelector("link");
-						var pubDateEl = item.querySelector("pubDate");
+        // ── Telegram RSS fallback ───────────────────────────────────────────────
 
-						var titleRaw = titleEl ? titleEl.textContent.trim() : "";
-						var descRaw = descEl ? descEl.textContent : "";
-						var link = linkEl ? linkEl.textContent.trim() : "";
-						var pubDate = pubDateEl ? pubDateEl.textContent.trim() : "";
+        function loadTelegram() {
+            var proxyUrl =
+                "https://api.allorigins.win/raw?url=" +
+                encodeURIComponent(TELEGRAM_RSS);
+            return fetch(proxyUrl)
+                .then(function (r) {
+                    if (!r.ok)
+                        throw new Error(
+                            "Telegram RSS fetch failed: " + r.status,
+                        );
+                    return r.text();
+                })
+                .then(function (xmlText) {
+                    var parser = new DOMParser();
+                    var doc = parser.parseFromString(
+                        xmlText,
+                        "application/xml",
+                    );
+                    var items = Array.from(doc.querySelectorAll("item"));
+                    var posts = items
+                        .map(function (item) {
+                            var titleEl = item.querySelector("title");
+                            var descEl = item.querySelector("description");
+                            var linkEl = item.querySelector("link");
+                            var pubDateEl = item.querySelector("pubDate");
 
-						// Strip HTML tags from description
-						var div = document.createElement("div");
-						div.innerHTML = descRaw;
-						var descText = (div.textContent || "")
-							.trim()
-							.replace(/\(Feed generated[^)]*\)/g, "")
-							.trim();
+                            var titleRaw = titleEl
+                                ? titleEl.textContent.trim()
+                                : "";
+                            var descRaw = descEl ? descEl.textContent : "";
+                            var link = linkEl ? linkEl.textContent.trim() : "";
+                            var pubDate = pubDateEl
+                                ? pubDateEl.textContent.trim()
+                                : "";
 
-						// Prefer title if meaningful, else use description text
-						var text = titleRaw.length > 15 ? titleRaw : (descText || titleRaw);
-						if (text.length > 300) text = text.slice(0, 297) + "…";
+                            // Strip HTML tags from description
+                            var div = document.createElement("div");
+                            div.innerHTML = descRaw;
+                            var descText = (div.textContent || "")
+                                .trim()
+                                .replace(/\(Feed generated[^)]*\)/g, "")
+                                .trim();
 
-						var date = pubDate ? new Date(pubDate) : null;
-						var validDate = date && !isNaN(date.getTime());
+                            // Prefer title if meaningful, else use description text
+                            var text =
+                                titleRaw.length > 15
+                                    ? titleRaw
+                                    : descText || titleRaw;
+                            if (text.length > 300)
+                                text = text.slice(0, 297) + "…";
 
-						if (!text || !validDate) return null;
-						return {
-							text: text,
-							createdAtIso: date.toISOString(),
-							createdAtLabel: dateFormatter.format(date),
-							href: link || null,
-						};
-					})
-					.filter(Boolean);
-				if (!posts.length) throw new Error("No Telegram posts found");
-				renderPosts(posts, "telegram / castlelogs");
-			});
-	}
+                            var date = pubDate ? new Date(pubDate) : null;
+                            var validDate = date && !isNaN(date.getTime());
 
-	// ── Main: try Bluesky, fall back to Telegram ────────────────────────────
+                            if (!text || !validDate) return null;
+                            return {
+                                text: text,
+                                createdAtIso: date.toISOString(),
+                                createdAtLabel: dateFormatter.format(date),
+                                href: link || null,
+                            };
+                        })
+                        .filter(Boolean);
+                    if (!posts.length)
+                        throw new Error("No Telegram posts found");
+                    renderPosts(posts, "telegram / castlelogs");
+                });
+        }
 
-	renderStatus("Loading the latest updates…", "loading");
-	loadBluesky().catch(function (bskyErr) {
-		console.warn("[NowFeed] Bluesky failed (" + bskyErr.message + "), trying Telegram fallback");
-		return loadTelegram().catch(function (tgErr) {
-			console.error("[NowFeed] Both sources failed:", tgErr.message);
-			renderStatus("No updates yet. Check back soon.", "empty");
-		});
-	});
-})();
+        // ── Main: try Bluesky, fall back to Telegram ────────────────────────────
+
+        renderStatus("Loading the latest updates…", "loading");
+        loadBluesky().catch(function (bskyErr) {
+            console.warn(
+                "[NowFeed] Bluesky failed (" +
+                    bskyErr.message +
+                    "), trying Telegram fallback",
+            );
+            return loadTelegram().catch(function (tgErr) {
+                console.error("[NowFeed] Both sources failed:", tgErr.message);
+                renderStatus("No updates yet. Check back soon.", "empty");
+            });
+        });
+    })();
 </script>
