@@ -1,0 +1,19 @@
+---
+name: "Nouns Builder Passport"
+status: "active"
+description: "Onchain reputation system for builders in Nouns DAO, built on the Ethereum Attestation Service. Tracks what people actually do — proposals, milestones, peer verifications — instead of just token holdings."
+url: "https://nouns-builder-passport.vercel.app"
+tags:
+  - solidity
+  - nouns-dao
+  - attestations
+  - onchain
+---
+
+An onchain reputation system for builders in Nouns DAO, built on the [Ethereum Attestation Service](https://attest.org). The idea: participation in a DAO should be more legible than "how many tokens do you hold." So the passport tracks what people actually *do*.
+
+It works through three attestation schemas. Propdates admins attest a builder's milestones (title, evidence, completion). Any Noun holder can then peer-verify a milestone — one verification per holder, enforced onchain. From those, the system auto-issues a **builder passport** the builder never signs themselves: total proposals, completed proposals, milestone counts, peer verifications, update cadence.
+
+All of it reads straight from the live Propdates contract, so there's no indexer to trust or keep in sync. Written in Solidity, tested and deployed with Foundry, OpenZeppelin for the token bits, reentrancy guards around the EAS callbacks. Operations land somewhere around $0.015–$0.06 in gas.
+
+→ [github.com/jgramajo4/nouns-builder-passport](https://github.com/jgramajo4/nouns-builder-passport)

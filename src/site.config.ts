@@ -1,9 +1,9 @@
 export const SITE_URL = "https://gramajo.xyz";
 export const SITE_TITLE = "gramajo";
 export const SITE_TAGLINE =
-  "Internet Archaeologist. Michelada Connoisseur. Founder of 0773H.";
+	"Legal ops at Asana · Nouns DAO builder · Founder of 0773H";
 export const SITE_DESCRIPTION =
-  "Personal website for Gramajo — internet archaeologist, crypto/web3 researcher, and founder of 0773H.";
+	"Juan Gramajo — legal ops at Asana, Nouns DAO builder, founder of 0773H. Bay Area, California.";
 
 export type NavLink = {
   label: string;

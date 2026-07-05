@@ -1,66 +1,117 @@
 ---
 import BaseLayout from "@/layouts/BaseLayout.astro";
+
+const socials = [
+	{ label: "Email", value: "jgramajo4@protonmail.com", href: "mailto:jgramajo4@protonmail.com" },
+	{ label: "GitHub", value: "jgramajo4", href: "https://github.com/jgramajo4" },
+	{ label: "Farcaster", value: "@gramajo.eth", href: "https://warpcast.com/gramajo.eth" },
+	{ label: "Bluesky", value: "@gramajo.bsky.social", href: "https://bsky.app/profile/gramajo.bsky.social" },
+	{ label: "Substack", value: "0773H Weekly", href: "https://gramajo.substack.com/" },
+	{ label: "Podcast", value: "Behind the Screen", href: "https://pods.media/behind-the-screen/" },
+];
 ---
 
 <BaseLayout
 	title="About"
-	description="Internet Archaeologist. Michelada Connoisseur. Digital art & crypto researcher since 2012. Founder of 0773H."
+	description="Juan Gramajo — legal ops at Asana, Nouns DAO builder, founder of 0773H. Bay Area, California."
 >
 	<header class="about-header">
 		<p class="about-eyebrow">/about</p>
-		<h1 class="about-title">Gramajo</h1>
+		<h1 class="about-title">Juan Gramajo</h1>
 		<p class="about-tagline">
-			Internet Archaeologist. Michelada Connoisseur. Digital art &amp; crypto researcher since 2012.
-			Founder of 0773H – a media and research company producing podcasts, video content, and weekly analysis reports.
+			Internet archaeologist. Michelada connoisseur. Founder of 0773H.
 		</p>
 	</header>
 
 	<section class="about-section">
-		<h2>Work &amp; research</h2>
 		<p>
-			I investigate how decentralized networks preserve (or erase) their own history. That means digging through forgotten
-			governance proposals, resurfacing early NFT experiments, and mapping the archeology of token communities. The research
-			fuels long-form audio, video essays, and high-signal briefs for founders, curators, and onchain investigators.
+			I'm Juan. I live in the Bay Area with my wife and our two kids.
 		</p>
 		<p>
-			From 2012 onward, I've been cataloging crypto's cultural artifacts—collecting oral histories, interviewing protocol
-			designers, and documenting how communities evolve when code and capital collide. The archive keeps growing, and every
-			project is another layer in the sediment.
+			My family is from Guatemala. We came to the US when I was one — my parents were fleeing
+			the civil war, and my dad had been kidnapped a few times, each one worse than the last.
+			I grew up in Marin County, went through the entire American school system, and spent
+			25+ years inside the immigration system while I did it. Most of the time I feel American.
+			Then something reminds me I'm not quite, and I remember I'm one of a few hundred thousand
+			people stuck in a weird in-between. That thread shows up in a lot of what I write here.
+		</p>
+		<p>
+			By day I work at <a href="https://asana.com">Asana</a>. I'm the technical person embedded
+			in the legal team — I build the tooling that makes legal work less painful. I got there
+			the long way: I've worked in legal for years, taught myself to code on the side, and
+			slowly turned "the guy who can write a script" into an actual job.
+		</p>
+		<p>
+			I think in bets, and I'm stingy with my time — it's the only thing I'm actually spending.
+			So most of what I do is a wager on where an hour is best put: the kids, the day job, or
+			the pile of things I build at night.
 		</p>
 	</section>
 
 	<section class="about-section">
-		<h2>Contact</h2>
+		<h2>What I'm building</h2>
+		<p>
+			<strong>0773H</strong> — my little web3 media project: a newsletter, a podcast, and
+			whatever else I feel like shipping. The name is calculator-speak. Type <code>07734</code>
+			into a calculator and flip it over — it reads <em>hELLO</em>. I swapped the 4 for an H,
+			because a 4 doesn't really look like an <em>h</em> upside down and a capital H does.
+			It's dumb, it's short, the domain and ENS were free, and it flexes — 0773H Weekly, Daily,
+			Spaces, whatever. I tweeted it out once and people replied in calculator language, so I
+			figured it landed with my kind of people.
+		</p>
+		<p>
+			Lately most of my building energy goes into the
+			<a href="https://nouns.wtf">Nouns DAO</a> ecosystem — an onchain builder-reputation
+			system, milestone-based contributor payments, a terminal client for governance, and a
+			Prop Dates tool for Lil Nouns. The full list, with the technical details, lives on the
+			<a href="/projects">Projects</a> page.
+		</p>
+		<p>
+			I'm on <a href="https://warpcast.com/gramajo.eth">Farcaster</a> more than anywhere else,
+			mostly because the stuff I write actually reaches people there. I'm interested in onchain
+			publishing, agents that can act on governance without a human babysitting them, and —
+			since Sora and everything after it — the problem of proving a message actually came from
+			<em>you</em>. I keep coming back to the idea that a signature and a keypair get you most
+			of the way there.
+		</p>
+	</section>
+
+	<section class="about-section">
+		<h2>Outside of tech</h2>
+		<p>
+			I'm a dad first. Most of my non-work hours go to the kids — playgrounds, bike rides, and
+			the logistics of moving two small humans around.
+		</p>
+		<p>
+			Beyond that: I grew up on streetwear (I still owe myself a proper deep-dive on The
+			Hundreds or Murakami). I'm a gamer with a backlog I'll never clear — Titanfall 2 pulled
+			me back in after The Last of Us made me put the controller down for a year. I read across
+			the map, from Paul Johnson's <em>Creators</em> to comics like <em>Y: The Last Man</em>.
+			I take photos (<a href="/photos">more on that here</a>). I got deep enough into birding
+			that I wrote an eBird plugin for Obsidian. And I travel when I can — five weeks around
+			Europe with a baby, San Sebastián, Montreal for the bagels and the coffee. Weekends
+			usually have soccer on somewhere in the background.
+		</p>
+	</section>
+
+	<section class="about-section">
+		<h2>Around the web</h2>
 		<dl class="about-contact">
-			<div>
-				<dt>Email</dt>
-				<dd><a href="mailto:onchainaliens@gmail.com">onchainaliens@gmail.com</a></dd>
-			</div>
-			<div>
-				<dt>Signal</dt>
-				<dd><span>gramajo.04</span></dd>
-			</div>
-			<div>
-				<dt>Telegram</dt>
-				<dd><a href="https://t.me/jgramajo4">jgramajo4</a></dd>
-			</div>
+			{socials.map((s) => (
+				<div>
+					<dt>{s.label}</dt>
+					<dd><a href={s.href} rel="noopener noreferrer">{s.value}</a></dd>
+				</div>
+			))}
 		</dl>
 	</section>
 
-	<section class="about-section">
-		<h2>Support the work</h2>
+	<section class="about-section about-footnote">
 		<p>
-			If the research is useful, consider backing the archive so more interviews, reconstructions, and network autopsies
-			can ship faster.
-		</p>
-		<a class="about-cta" href="/donation">Support the archive ↗</a>
-	</section>
-
-	<section class="about-section">
-		<h2>Decentralized mirror</h2>
-		<p>
-			A decentralized copy of this site lives on <a href="https://gramajo.eth.limo" rel="noopener noreferrer">gramajo.eth.limo</a>.
-			It updates alongside the canonical version and stays resilient even if this server goes dark.
+			This blog goes back to 2016, when I was teaching myself Python. The first week I emailed
+			the teacher to quit — told him it wasn't for me and I couldn't do it. He talked me off
+			the ledge, I kept going, and those early posts are the record of it. They're rough and
+			I've left them up on purpose. Learning in public means the beginning stays public too.
 		</p>
 	</section>
 </BaseLayout>
@@ -109,9 +160,22 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 	.about-section p {
 		margin: 0;
 		color: var(--color-text);
+		line-height: 1.7;
+	}
+	.about-section a {
+		color: var(--color-accent);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+	.about-section code {
+		font-size: 0.9em;
+		background: var(--color-border);
+		padding: 0.1em 0.3em;
+		border-radius: 3px;
 	}
 	.about-contact {
 		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 		gap: 0.85rem;
 		margin: 0;
 		padding: 0;
@@ -134,23 +198,10 @@ import BaseLayout from "@/layouts/BaseLayout.astro";
 	.about-contact a {
 		color: var(--color-accent);
 	}
-	.about-cta {
-		display: inline-flex;
-		align-items: center;
-		gap: 0.35rem;
-		padding: 0.6rem 1rem;
-		border: 1px solid var(--color-accent);
-		border-radius: calc(var(--radius-card) / 1.5);
-		font-size: 0.82rem;
-		text-transform: uppercase;
-		letter-spacing: 0.08em;
-		color: var(--color-accent);
-		transition: background var(--transition-base), color var(--transition-base);
-	}
-	.about-cta:hover,
-	.about-cta:focus-visible {
-		background: var(--color-accent);
-		color: var(--color-bg);
+	.about-footnote p {
+		font-size: 0.9rem;
+		color: var(--color-muted);
+		font-style: italic;
 	}
 	@media (max-width: 640px) {
 		.about-header {
