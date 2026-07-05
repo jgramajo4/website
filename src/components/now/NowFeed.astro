@@ -93,8 +93,6 @@ const FEED_ID = "now-feed-island";
         if (!container) return;
 
         var BSKY_DID = "did:plc:5253luauct5pfcww35cvrn3d"; // gramajo.xyz
-        var TELEGRAM_RSS =
-            "https://fetchrss.com/feed/1w7Qnw9JKA3G1w7QnREKMEpH.rss";
 
         var dateFormatter = new Intl.DateTimeFormat("en-US", {
             dateStyle: "medium",
@@ -114,17 +112,14 @@ const FEED_ID = "now-feed-island";
                 '<p class="now-feed__status">' + escapeHtml(message) + "</p>";
         }
 
-        var SOURCE_LINKS = {
-            bluesky: "https://bsky.app/profile/gramajo.xyz",
-            "telegram / castlelogs": "https://t.me/castlelogs",
-        };
-
         function renderPosts(posts, sourceLabel) {
             if (!posts.length) {
                 renderStatus("No updates yet. Check back soon.", "empty");
                 return;
             }
-            var sourceUrl = sourceLabel ? SOURCE_LINKS[sourceLabel] : null;
+            var sourceUrl = sourceLabel
+                ? "https://bsky.app/profile/gramajo.xyz"
+                : null;
             var labelHtml = sourceLabel
                 ? '<p class="now-feed__source-label">' +
                   (sourceUrl
@@ -168,40 +163,39 @@ const FEED_ID = "now-feed-island";
                 labelHtml + '<ul class="now-feed__list">' + items + "</ul>";
         }
 
-        // ── Bluesky (direct DID, no resolve step needed) ───────────────────────
+        // ── Bluesky (public author feed, unauthenticated) ──────────────────────
 
         function loadBluesky() {
-            // Build URL manually — do NOT encode the DID as it contains colons that must stay intact
-            var listUrl =
-                "https://public.api.bsky.app/xrpc/com.atproto.repo.listRecords?repo=" +
-                BSKY_DID +
-                "&collection=app.bsky.feed.post&limit=20";
-            console.log("[NowFeed] Fetching:", listUrl);
-            return fetch(listUrl, { headers: { Accept: "application/json" } })
+            var feedUrl =
+                "https://public.api.bsky.app/xrpc/app.bsky.feed.getAuthorFeed?actor=gramajo.xyz&limit=20";
+            console.log("[NowFeed] Fetching:", feedUrl);
+            return fetch(feedUrl, { headers: { Accept: "application/json" } })
                 .then(function (r) {
-                    if (!r.ok) throw new Error("listRecords HTTP " + r.status);
+                    if (!r.ok) throw new Error("getAuthorFeed HTTP " + r.status);
                     return r.json();
                 })
                 .then(function (payload) {
                     console.log("[NowFeed] Bluesky payload:", payload);
-                    var records = Array.isArray(payload.records)
-                        ? payload.records
-                        : [];
-                    console.log(
-                        "[NowFeed] Bluesky record count:",
-                        records.length,
-                    );
-                    var posts = records
-                        .map(function (r) {
+                    var feed = Array.isArray(payload.feed) ? payload.feed : [];
+                    console.log("[NowFeed] Bluesky feed count:", feed.length);
+                    var posts = feed
+                        .map(function (item) {
+                            var post = item && item.post;
+                            var record = post && post.record;
                             var text =
-                                r.value && typeof r.value.text === "string"
-                                    ? r.value.text.trim()
+                                record && typeof record.text === "string"
+                                    ? record.text.trim()
                                     : "";
                             var createdAt =
-                                r.value && typeof r.value.createdAt === "string"
-                                    ? r.value.createdAt
+                                record && typeof record.createdAt === "string"
+                                    ? record.createdAt
                                     : null;
-                            if (!text || !createdAt || !r.rkey) return null;
+                            var uri =
+                                post && typeof post.uri === "string"
+                                    ? post.uri
+                                    : "";
+                            var rkey = uri ? uri.split("/").pop() : "";
+                            if (!text || !createdAt || !rkey) return null;
                             var date = new Date(createdAt);
                             return {
                                 text: text,
@@ -209,7 +203,7 @@ const FEED_ID = "now-feed-island";
                                 createdAtLabel: isNaN(date.getTime())
                                     ? createdAt
                                     : dateFormatter.format(date),
-                                href: "/now?rkey=" + encodeURIComponent(r.rkey),
+                                href: "/now?rkey=" + encodeURIComponent(rkey),
                             };
                         })
                         .filter(Boolean)
@@ -221,98 +215,20 @@ const FEED_ID = "now-feed-island";
                         });
                     if (!posts.length)
                         throw new Error(
-                            "Zero posts in Bluesky response (records: " +
-                                records.length +
+                            "Zero posts in Bluesky response (feed: " +
+                                feed.length +
                                 ")",
                         );
                     renderPosts(posts, "bluesky");
                 });
         }
 
-        // ── Telegram RSS fallback ───────────────────────────────────────────────
-
-        function loadTelegram() {
-            var proxyUrl =
-                "https://api.allorigins.win/raw?url=" +
-                encodeURIComponent(TELEGRAM_RSS);
-            return fetch(proxyUrl)
-                .then(function (r) {
-                    if (!r.ok)
-                        throw new Error(
-                            "Telegram RSS fetch failed: " + r.status,
-                        );
-                    return r.text();
-                })
-                .then(function (xmlText) {
-                    var parser = new DOMParser();
-                    var doc = parser.parseFromString(
-                        xmlText,
-                        "application/xml",
-                    );
-                    var items = Array.from(doc.querySelectorAll("item"));
-                    var posts = items
-                        .map(function (item) {
-                            var titleEl = item.querySelector("title");
-                            var descEl = item.querySelector("description");
-                            var linkEl = item.querySelector("link");
-                            var pubDateEl = item.querySelector("pubDate");
-
-                            var titleRaw = titleEl
-                                ? titleEl.textContent.trim()
-                                : "";
-                            var descRaw = descEl ? descEl.textContent : "";
-                            var link = linkEl ? linkEl.textContent.trim() : "";
-                            var pubDate = pubDateEl
-                                ? pubDateEl.textContent.trim()
-                                : "";
-
-                            // Strip HTML tags from description
-                            var div = document.createElement("div");
-                            div.innerHTML = descRaw;
-                            var descText = (div.textContent || "")
-                                .trim()
-                                .replace(/\(Feed generated[^)]*\)/g, "")
-                                .trim();
-
-                            // Prefer title if meaningful, else use description text
-                            var text =
-                                titleRaw.length > 15
-                                    ? titleRaw
-                                    : descText || titleRaw;
-                            if (text.length > 300)
-                                text = text.slice(0, 297) + "…";
-
-                            var date = pubDate ? new Date(pubDate) : null;
-                            var validDate = date && !isNaN(date.getTime());
-
-                            if (!text || !validDate) return null;
-                            return {
-                                text: text,
-                                createdAtIso: date.toISOString(),
-                                createdAtLabel: dateFormatter.format(date),
-                                href: link || null,
-                            };
-                        })
-                        .filter(Boolean);
-                    if (!posts.length)
-                        throw new Error("No Telegram posts found");
-                    renderPosts(posts, "telegram / castlelogs");
-                });
-        }
-
-        // ── Main: try Bluesky, fall back to Telegram ────────────────────────────
+        // ── Main: try Bluesky, otherwise show empty state ──────────────────────
 
         renderStatus("Loading the latest updates…", "loading");
         loadBluesky().catch(function (bskyErr) {
-            console.warn(
-                "[NowFeed] Bluesky failed (" +
-                    bskyErr.message +
-                    "), trying Telegram fallback",
-            );
-            return loadTelegram().catch(function (tgErr) {
-                console.error("[NowFeed] Both sources failed:", tgErr.message);
-                renderStatus("No updates yet. Check back soon.", "empty");
-            });
+            console.error("[NowFeed] Bluesky failed:", bskyErr.message);
+            renderStatus("No updates yet. Check back soon.", "empty");
         });
     })();
 </script>
