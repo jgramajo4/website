@@ -1,0 +1,18 @@
+---
+name: "Nouns Proposal Predictor"
+status: "active"
+description: "DistilBERT model fine-tuned on Nouns DAO proposals to predict vote outcomes from proposal text. Trained on 983 onchain proposals — pushes governance analytics past token-weighted guesswork into actual NLP."
+url: "https://huggingface.co/gramajo/nouns-proposal-predictor"
+tags:
+  - huggingface
+  - nlp
+  - nouns-dao
+  - pytorch
+  - distilbert
+---
+
+A DistilBERT-based text classifier fine-tuned on every Nouns DAO proposal to date (983 proposals). The model ingests a proposal's title and description and predicts whether it's likely to pass or fail — no token holdings, no voter history, just the words.
+
+Built as an experiment in making DAO governance more legible through NLP. The training pipeline uses the [nouns-proposals dataset](https://huggingface.co/gramajo/nouns-proposals) with Weights & Biases for experiment tracking. Serves as a benchmark for how well language alone captures the signals that drive onchain voting.
+
+→ [huggingface.co/gramajo/nouns-proposal-predictor](https://huggingface.co/gramajo/nouns-proposal-predictor)

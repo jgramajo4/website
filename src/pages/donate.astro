@@ -1,0 +1,231 @@
+---
+import BaseLayout from "@/layouts/BaseLayout.astro";
+
+const cryptoDonations = [
+	{
+		label: "Bitcoin (Lightning)",
+		value: "gramajo@primal.net",
+		href: "https://primal.net/gramajo",
+	},
+	{
+		label: "Ethereum / ENS",
+		value: "07734.fkey.eth",
+		href: "https://app.ens.domains/07734.fkey.eth",
+	},
+	{
+		label: "Zcash (ZEC)",
+		value: "u1wcjqnp9wh3...chgmw55",
+		href: undefined,
+		full: "u1wcjqnp9wh3nex20expdpq05pvegtpkrjc6euh8mzwjpgu7sm09j5yz38vnl4x27zvdu255q0auaekee9eu0402w50rfmcza9ydmak7ltexkn05p7qa8j3a60wcwxus6la67j8c8a9e6yu7ryt7ucwh5dn2cupdq0gsqqc6377chgmw55",
+	},
+	{
+		label: "Monero (XMR)",
+		value: "41gexEmgr...Ps7xpYk",
+		href: undefined,
+		full: "41gexEmgrKRgaE2ao62jkgMFqiig67CBJFKQQdHrs9vTgTvGfKcrTd8bKTzFkwxyC82CWW7QNKYy4DnsYLKb9xDFPs7xpYk",
+	},
+];
+---
+
+<BaseLayout
+	title="Donate"
+	description="Support independent research and content creation in web3."
+>
+	<header class="donate-header">
+		<p class="donate-eyebrow">/donate</p>
+		<h1 class="donate-title">Support My Work</h1>
+		<p class="donate-tagline">
+			If you find value in my research, analysis, and content creation, I'd be
+			grateful for your support. Your donations help me continue producing
+			in-depth analysis, maintain my independence, and dedicate more time to
+			exploring the evolving landscape of digital art, crypto, and web3.
+		</p>
+	</header>
+
+	<section class="donate-section">
+		<h2>Crypto Donations</h2>
+		<dl class="donate-addresses">
+			{cryptoDonations.map((entry) => (
+				<div class="donate-address">
+					<dt>{entry.label}</dt>
+					<dd>
+						{entry.href ? (
+							<a href={entry.href} rel="noopener noreferrer">{entry.value}</a>
+						) : (
+							<code class="donate-address__full">{entry.full}</code>
+						)}
+					</dd>
+				</div>
+			))}
+		</dl>
+	</section>
+
+	<section class="donate-section">
+		<h2>Web2 / Fiat</h2>
+		<p>
+			Prefer a card or PayPal? You can support my work through Ko-fi — one-time
+			or recurring, no crypto required.
+		</p>
+		<p class="donate-kofi">
+			<a
+				href="https://ko-fi.com/gramajo"
+				rel="noopener noreferrer"
+				class="donate-kofi__button"
+			>
+				<span class="donate-kofi__icon">
+					<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" width="20" height="20">
+						<path d="M17 8h1a4 4 0 0 1 0 8h-1"/>
+						<path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z"/>
+						<line x1="6" y1="2" x2="6" y2="4"/>
+						<line x1="10" y1="2" x2="10" y2="4"/>
+						<line x1="14" y1="2" x2="14" y2="4"/>
+					</svg>
+				</span>
+				Support on Ko-fi ↗
+			</a>
+		</p>
+	</section>
+
+	<section class="donate-section donate-footnote">
+		<p>
+			Thank you for supporting independent research and content creation in the
+			web3 space. Every contribution, no matter the size, helps me continue
+			this work.
+		</p>
+	</section>
+</BaseLayout>
+
+<style>
+	.donate-header {
+		display: flex;
+		flex-direction: column;
+		gap: 1rem;
+		margin-bottom: 2.5rem;
+	}
+	.donate-eyebrow {
+		margin: 0;
+		font-size: 0.8rem;
+		letter-spacing: 0.12em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+	.donate-title {
+		margin: 0;
+		font-size: clamp(2.4rem, 6vw, 3.2rem);
+	}
+	.donate-tagline {
+		margin: 0;
+		max-width: 60ch;
+		color: var(--color-muted);
+		font-size: 0.98rem;
+		line-height: 1.7;
+	}
+	.donate-section {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+		margin-bottom: 2.5rem;
+	}
+	.donate-section:last-of-type {
+		margin-bottom: 0;
+	}
+	.donate-section h2 {
+		margin: 0;
+		font-size: 1.25rem;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		color: var(--color-accent);
+	}
+	.donate-section p {
+		margin: 0;
+		color: var(--color-text);
+		line-height: 1.7;
+	}
+	.donate-section a {
+		color: var(--color-accent);
+		text-decoration: underline;
+		text-underline-offset: 2px;
+	}
+	.donate-addresses {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+		gap: 1rem;
+		margin: 0;
+		padding: 0;
+	}
+	.donate-address {
+		display: flex;
+		flex-direction: column;
+		gap: 0.2rem;
+		padding: 1rem;
+		background: var(--color-surface-2);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-card);
+	}
+	.donate-address dt {
+		font-size: 0.75rem;
+		letter-spacing: 0.1em;
+		text-transform: uppercase;
+		color: var(--color-muted);
+	}
+	.donate-address dd {
+		margin: 0;
+		font-size: 0.88rem;
+	}
+	.donate-address a {
+		color: var(--color-accent);
+	}
+	.donate-address__full {
+		font-size: 0.72rem;
+		word-break: break-all;
+		line-height: 1.6;
+		background: transparent;
+		border: none;
+		padding: 0;
+		color: var(--color-muted);
+	}
+	.donate-kofi {
+		margin-top: 0.5rem;
+	}
+	.donate-kofi__button {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.65rem;
+		padding: 0.75rem 1.25rem;
+		border: 1px solid var(--color-accent-border);
+		border-radius: var(--radius-card);
+		color: var(--color-accent);
+		font-size: 0.88rem;
+		letter-spacing: 0.04em;
+		text-decoration: none;
+		transition:
+			background var(--transition-base),
+			border-color var(--transition-base);
+	}
+	.donate-kofi__button:hover {
+		background: var(--color-accent-dim);
+		border-color: var(--color-accent);
+		text-decoration: none;
+		color: var(--color-accent);
+	}
+	.donate-kofi__icon {
+		display: flex;
+		align-items: center;
+	}
+	.donate-footnote p {
+		font-size: 0.9rem;
+		color: var(--color-muted);
+		font-style: italic;
+	}
+	@media (max-width: 640px) {
+		.donate-header {
+			gap: 0.75rem;
+		}
+		.donate-tagline {
+			font-size: 0.92rem;
+		}
+		.donate-addresses {
+			grid-template-columns: 1fr;
+		}
+	}
+</style>

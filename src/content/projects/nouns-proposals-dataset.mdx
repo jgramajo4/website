@@ -1,0 +1,17 @@
+---
+name: "Nouns Proposals Dataset"
+status: "active"
+description: "Structured dataset of 983 Nouns DAO proposals — title, description, vote outcome, proposer, and metadata. The training set for the proposal-predictor models, published on HuggingFace Hub."
+url: "https://huggingface.co/gramajo/nouns-proposals"
+tags:
+  - huggingface
+  - dataset
+  - nouns-dao
+  - governance
+---
+
+A curated dataset of all Nouns DAO proposals, extracted from onchain data and structured for ML training. Each record includes the proposal title, full description, final vote outcome (pass/fail), proposer address, and relevant metadata.
+
+Built as the foundation for governance analytics and NLP experiments in the DAO space. The dataset is split into train/test sets (stratified by outcome) and ships with a model card documenting the schema and known limitations. Used to train both the [proposal predictor](https://huggingface.co/gramajo/nouns-proposal-predictor) and the [compact nouns-model](https://huggingface.co/gramajo/nouns-model).
+
+→ [huggingface.co/gramajo/nouns-proposals](https://huggingface.co/gramajo/nouns-proposals)
