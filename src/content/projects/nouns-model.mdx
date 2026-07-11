@@ -1,0 +1,18 @@
+---
+name: "Nouns Model"
+status: "active"
+description: "Lightweight DistilBERT classifier for Nouns DAO proposal outcomes, deployed on HuggingFace Hub. Optimized for fast inference — 67M params, runs on CPU without breaking a sweat."
+url: "https://huggingface.co/gramajo/nouns-model"
+tags:
+  - huggingface
+  - nlp
+  - nouns-dao
+  - pytorch
+  - distilbert
+---
+
+A compact DistilBERT model (67M parameters) trained to classify Nouns DAO proposals as pass or fail from their text alone. Built for speed and accessibility — inference runs comfortably on CPU, no GPU required.
+
+This is the production-ready variant, trimmed and optimized from the research training pipeline. Pairs with the [nouns-proposals dataset](https://huggingface.co/gramajo/nouns-proposals) and can be loaded in a few lines with the `transformers` library.
+
+→ [huggingface.co/gramajo/nouns-model](https://huggingface.co/gramajo/nouns-model)
